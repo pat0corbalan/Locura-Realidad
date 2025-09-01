@@ -1,0 +1,7 @@
+Nombre de usuario
+pat0corbalan
+Contraseña
+RN7kVnApRDDfWQNz
+
+emv
+mongodb+srv://pat0corbalan:RN7kVnApRDDfWQNz@rocktours.qyvkv52.mongodb.net/
