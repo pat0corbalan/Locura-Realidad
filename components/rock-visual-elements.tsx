@@ -1,14 +1,15 @@
-import { Guitar, Music, Disc3, Volume2, Zap, Star } from "lucide-react"
+import { Music, Disc3, Volume2, Zap, Star } from "lucide-react"
+import ElectricGuitarIcon from "./icon/ElectricGuitarIcon"
 
 export function FloatingRockIcons() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {/* Floating guitars */}
       <div className="absolute top-20 left-10 opacity-5 animate-pulse">
-        <Guitar className="h-32 w-32 text-primary rotate-12" />
+        <ElectricGuitarIcon className="h-32 w-32 text-primary rotate-12" />
       </div>
       <div className="absolute top-40 right-20 opacity-5 animate-pulse delay-1000">
-        <Guitar className="h-24 w-24 text-primary -rotate-45" />
+        <ElectricGuitarIcon className="h-24 w-24 text-primary -rotate-45" />
       </div>
 
       {/* Floating vinyl records */}
@@ -84,7 +85,7 @@ export function RockPatternBackground() {
 }
 
 export function SectionDivider({ variant = "guitar" }: { variant?: "guitar" | "vinyl" | "lightning" }) {
-  const Icon = variant === "guitar" ? Guitar : variant === "vinyl" ? Disc3 : Zap
+  const Icon = variant === "guitar" ? ElectricGuitarIcon : variant === "vinyl" ? Disc3 : Zap
 
   return (
     <div className="flex items-center justify-center py-8">
@@ -109,9 +110,9 @@ export function RockQuote() {
           <div className="absolute -bottom-4 -right-4 text-6xl text-primary/20 font-bold">"</div>
         </div>
         <div className="flex items-center justify-center gap-2 mt-6">
-          <Guitar className="h-5 w-5 text-primary" />
+          <ElectricGuitarIcon className="h-5 w-5 text-primary" />
           <span className="text-muted-foreground">- Locura y Realidad</span>
-          <Guitar className="h-5 w-5 text-primary" />
+          <ElectricGuitarIcon className="h-5 w-5 text-primary" />
         </div>
       </div>
     </div>

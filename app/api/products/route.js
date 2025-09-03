@@ -17,7 +17,7 @@ export async function POST(request) {
   try {
     await connectDB();
     const body = await request.json();
-    const product = new Product(body);
+    const product = new Product(body); 
     const newProduct = await product.save();
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {

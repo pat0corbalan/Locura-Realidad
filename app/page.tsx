@@ -6,6 +6,7 @@ import { PhotoGallery } from "@/components/photo-gallery"
 import { ShoppingCartButton } from "@/components/shopping-cart"
 import { CartPageContent } from "@/components/cart-page-content"
 import { FloatingRockIcons, RockPatternBackground, SectionDivider, RockQuote } from "@/components/rock-visual-elements"
+import ElectricGuitarIcon from "@/components/icon/ElectricGuitarIcon"
 
 export default function HomePage() {
   const tours = [
@@ -48,8 +49,17 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <nav className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Guitar className="h-8 w-8 text-primary animate-rock-glow" />
-              <h1 className="text-2xl font-bold text-foreground text-rock-shadow">Locura y Realidad</h1>
+              {/* <Guitar className="h-8 w-8 text-primary animate-rock-glow" /> */}
+              <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
+                Locura <span
+                  className="text-black"
+                  style={{
+                    textShadow: '0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000',
+                  }}
+                >
+                  &
+                </span> Realidad
+              </h1>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#tours" className="text-foreground hover:text-primary transition-colors">
@@ -68,14 +78,15 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-4 text-center z-10">
+      <section className="relative py-40 px-4 text-center z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
         <div className="container mx-auto relative z-10">
           <div className="flex items-center justify-center mb-6">
             <Music className="h-12 w-12 text-primary mr-4 animate-pulse" />
             <h2 className="text-5xl md:text-7xl font-bold text-foreground text-neon-glow">
-              LOCURA Y <span className="text-primary">REALIDAD</span>
+              LOCURA <span className="text-black neon-red-border">&</span> <span className="text-primary">REALIDAD</span>
             </h2>
+              
           </div>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Vive la experiencia definitiva del rock. Tours únicos que te llevan a los lugares más legendarios de la

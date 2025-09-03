@@ -16,6 +16,8 @@ interface Product {
   category: string;
   rating: number;
   inStock: boolean;
+  sizes?: string[];   
+  selectedSize?: string; 
 }
 
 interface MerchandiseStoreProps {
@@ -25,6 +27,7 @@ interface MerchandiseStoreProps {
 export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({}); // Guardar talla seleccionada por producto
 
   useEffect(() => {
     async function fetchProducts() {
@@ -121,7 +124,42 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                 </div>
               </div>
 
-              <Button className="w-full" disabled={!product.inStock} onClick={() => onAddToCart(product)}>
+              {/* Selector de talla */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((size) => (
+                    <Button
+                      key={size}
+                      variant={selectedSizes[product._id] === size ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        setSelectedSizes((prev) => ({
+                          ...prev,
+                          [product._id]: size,
+                        }))
+                      }
+                    >
+                      {size}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {/* Botón de Agregar al Carrito */}
+              <Button
+                className="w-full"
+                disabled={!product.inStock}
+                onClick={() => {
+                  const selectedSize = selectedSizes[product._id];
+
+                  if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+                    alert("Por favor selecciona una talla.");
+                    return;
+                  }
+
+                  onAddToCart({ ...product, selectedSize });
+                }}
+              >
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 {product.inStock ? "Agregar al Carrito" : "Agotado"}
               </Button>
