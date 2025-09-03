@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ShoppingBag, ImageIcon, Calendar } from "lucide-react"
-import { Types } from "mongoose" // Import Types from mongoose
+import { Types } from "mongoose"
 
 type ProductType = {
   _id: string
@@ -43,6 +43,38 @@ type PhotoType = {
   location: string
 }
 
+// Interfaces para los datos crudos de Mongo (con ObjectId)
+interface RawProduct {
+  _id: Types.ObjectId
+  name: string
+  description: string
+  price: number
+  originalPrice?: number
+  image: string
+  category: string
+  rating: number
+  inStock: boolean
+  sizes?: string[]
+}
+
+interface RawTour {
+  _id: Types.ObjectId
+  title: string
+  description: string
+  destination: string
+  dates: string
+  price: string
+  image: string
+}
+
+interface RawPhoto {
+  _id: Types.ObjectId
+  src: string
+  alt: string
+  title: string
+  location: string
+}
+
 export default async function AdminDashboard() {
   await connectDB()
 
@@ -51,44 +83,23 @@ export default async function AdminDashboard() {
   const toursCount = await Tour.countDocuments()
   const photosCount = await Photo.countDocuments()
 
-  // Define interfaces for raw data to match Mongoose schema
-  interface RawProduct {
-    _id: Types.ObjectId
-    name: string
-    description: string
-    price: number
-    originalPrice?: number
-    image: string
-    category: string
-    rating: number
-    inStock: boolean
-    sizes: string[]
-  }
+  // Obtén datos crudos con lean<T>()
+  const rawProducts = await Product.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean<RawProduct[]>()
 
-  interface RawTour {
-    _id: Types.ObjectId
-    title: string
-    description: string
-    destination: string
-    dates: string
-    price: string
-    image: string
-  }
+  const rawTours = await Tour.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean<RawTour[]>()
 
-  interface RawPhoto {
-    _id: Types.ObjectId
-    src: string
-    alt: string
-    title: string
-    location: string
-  }
+  const rawPhotos = await Photo.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .lean<RawPhoto[]>()
 
-  // Datos sin procesar desde la DB con tipado explícito
-  const rawProducts = await Product.find().sort({ createdAt: -1 }).limit(5).lean() as RawProduct[]
-  const rawTours = await Tour.find().sort({ createdAt: -1 }).limit(5).lean() as RawTour[]
-  const rawPhotos = await Photo.find().sort({ createdAt: -1 }).limit(5).lean() as RawPhoto[]
-
-  // Mapeamos productos para ajustarlos a ProductType
+  // Mapea los datos crudos a los tipos usados en la UI
   const recentProducts: ProductType[] = rawProducts.map((p) => ({
     _id: p._id.toString(),
     name: p.name,
@@ -99,10 +110,9 @@ export default async function AdminDashboard() {
     category: p.category,
     rating: p.rating,
     inStock: p.inStock,
-    sizes: p.sizes || [],
+    sizes: p.sizes ?? [],
   }))
 
-  // Mapeamos tours para ajustarlos a TourType
   const recentTours: TourType[] = rawTours.map((t) => ({
     _id: t._id.toString(),
     title: t.title,
@@ -113,7 +123,6 @@ export default async function AdminDashboard() {
     image: t.image,
   }))
 
-  // Mapeamos fotos para ajustarlas a PhotoType
   const recentPhotos: PhotoType[] = rawPhotos.map((ph) => ({
     _id: ph._id.toString(),
     src: ph.src,
@@ -122,7 +131,6 @@ export default async function AdminDashboard() {
     location: ph.location,
   }))
 
-  // The rest of your code remains unchanged
   return (
     <div className="space-y-6">
       <div>
