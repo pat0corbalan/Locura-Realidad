@@ -59,14 +59,10 @@ export function PhotoModal({ isOpen, onClose, onSave, photo }: PhotoModalProps) 
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.title.trim()) newErrors.title = "El título es requerido";
     if (!formData.alt.trim()) newErrors.alt = "La descripción alternativa es requerida";
     if (!formData.location.trim()) newErrors.location = "La ubicación es requerida";
-
-    // Si es una nueva foto y no se ha seleccionado un archivo, también es un error
     if (!photo && !file) newErrors.src = "La imagen es requerida";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -82,7 +78,6 @@ export function PhotoModal({ isOpen, onClose, onSave, photo }: PhotoModalProps) 
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      // Opcional: mostrar una vista previa local de la imagen
       const src = URL.createObjectURL(selectedFile);
       setFormData((prev) => ({ ...prev, src }));
       if (errors.src) {
@@ -95,36 +90,27 @@ export function PhotoModal({ isOpen, onClose, onSave, photo }: PhotoModalProps) 
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Si estamos editando y no se ha seleccionado un nuevo archivo, solo guardamos los metadatos
     const isEditingWithoutNewFile = photo && !file;
 
     const finalFormData = new FormData();
     if (file) {
-      finalFormData.append("file", file);
+      finalFormData.append("src", file); // ✅ CAMBIO AQUÍ
     }
     finalFormData.append("title", formData.title);
     finalFormData.append("alt", formData.alt);
     finalFormData.append("location", formData.location);
 
-    if (isEditingWithoutNewFile) {
-      // Si solo se están actualizando los metadatos, envía una solicitud diferente
-      // Considera crear un endpoint PUT o PATCH para esto. Por ahora, asumiremos que
-      // la lógica de tu backend maneja esta situación.
-      console.warn("Se están actualizando solo los metadatos. La URL de la imagen no cambiará.");
-    }
-
     try {
       setLoading(true);
 
       const res = await fetch("/api/photos", {
-        method: "POST", // Tu backend unificado manejará ambas lógicas
+        method: "POST",
         body: finalFormData,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Manejar errores de validación del backend
         if (data.errors) {
           const newErrors: Record<string, string> = {};
           for (const key in data.errors) {

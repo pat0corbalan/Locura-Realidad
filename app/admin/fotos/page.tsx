@@ -51,7 +51,6 @@ export default function PhotosPage() {
     setIsModalOpen(true)
   }
 
-
   const handleDeletePhoto = async (photoId: string) => {
     try {
       await fetch(`/api/photos/${photoId}`, {
@@ -63,29 +62,9 @@ export default function PhotosPage() {
     }
   }
 
-const handleSavePhoto = async (photoData: Omit<Photo, "_id">) => {
-  try {
-    const res = await fetch("/api/photos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(photoData),
-    })
-
-    if (!res.ok) {
-      throw new Error("Error al guardar la foto")
-    }
-
-    const newPhoto = await res.json()
+  const handlePhotoSaved = (newPhoto: Photo) => {
     setPhotos((prev) => [...prev, newPhoto])
-  } catch (error) {
-    console.error("Error saving photo:", error)
-  } finally {
-    setIsModalOpen(false)
-    setEditingPhoto(null)
   }
-}
-
-
 
   return (
     <div className="space-y-6">
@@ -128,7 +107,7 @@ const handleSavePhoto = async (photoData: Omit<Photo, "_id">) => {
             <div className="relative aspect-[4/3] overflow-hidden">
               <img
                 src={photo.src || "/placeholder.svg"}
-                alt={photo.alt}
+                alt={photo.alt || "Foto sin descripción"}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
@@ -143,7 +122,7 @@ const handleSavePhoto = async (photoData: Omit<Photo, "_id">) => {
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDeletePhoto(photo._id)}
+                  onClick={() => photo._id && handleDeletePhoto(photo._id)}
                   className="bg-destructive/80 hover:bg-destructive text-destructive-foreground"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -186,7 +165,7 @@ const handleSavePhoto = async (photoData: Omit<Photo, "_id">) => {
           setIsModalOpen(false)
           setEditingPhoto(null)
         }}
-        onSave={handleSavePhoto}
+        onSave={handlePhotoSaved}
         photo={editingPhoto}
       />
     </div>

@@ -1,6 +1,6 @@
 // app/api/photos/save/route.ts
 import { connectDB } from "@/lib/mongodb"
-import Photo from "@/models/photo"
+import Photo from "@/models/Photo"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
