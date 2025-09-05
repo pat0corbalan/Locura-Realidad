@@ -8,6 +8,7 @@ const tourSchema = new mongoose.Schema(
     dates: { type: String, required: true },
     price: { type: String, required: true },
     image: { type: String, required: true },
+    grupo: {type: String, required: false}
   },
   { timestamps: true }
 );
