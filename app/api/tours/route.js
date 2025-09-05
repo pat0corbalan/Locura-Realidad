@@ -8,50 +8,46 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function GET() {
-  try {
-    await connectDB();
-    const tours = await Tour.find();
-    return Response.json(tours);
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-}
-
 export async function POST(req) {
+  await connectDB();
+
+  const contentType = req.headers.get("content-type") || "";
+  if (!contentType.includes("multipart/form-data")) {
+    return new Response(
+      JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
+      { status: 400 }
+    );
+  }
+
+  const form = await req.formData();
+
+  const file = form.get("image");
+  const title = form.get("title");
+  const description = form.get("description");
+  const destination = form.get("destination");
+  const dates = form.get("dates");
+  const price = form.get("price");
+  const grupo = form.get("grupo");
+
+  if (!file || !file.name) {
+    return new Response(
+      JSON.stringify({ error: "No se subió una imagen válida" }),
+      { status: 400 }
+    );
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
   try {
-    await connectDB();
-
-    const contentType = req.headers.get("content-type") || "";
-    if (!contentType.includes("multipart/form-data")) {
-      return new Response("Content-Type must be multipart/form-data", { status: 400 });
-    }
-
-    const form = await req.formData();
-    const file = form.get("image");
-    const title = form.get("title")?.toString() || "";
-    const description = form.get("description")?.toString() || "";
-    const destination = form.get("destination")?.toString() || "";
-    const dates = form.get("dates")?.toString() ? JSON.parse(form.get("dates").toString()) : [];
-    const price = parseFloat(form.get("price")?.toString() || "0");
-    const grupo = form.get("grupo")?.toString() || undefined;
-
-    if (!title || !description || !destination || !dates.length || !price || !file) {
-      return new Response("Faltan campos requeridos", { status: 400 });
-    }
-
-    if (typeof file.arrayBuffer !== "function") {
-      return new Response("Imagen no válida", { status: 400 });
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ folder: "tours" }, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      }).end(buffer);
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: `tours/${title}` },
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      ).end(buffer);
     });
 
     const nuevoTour = await Tour.create({
@@ -61,10 +57,24 @@ export async function POST(req) {
       dates,
       price,
       grupo,
-      image: uploadResult.secure_url,
+      image: result.secure_url,
     });
 
-    return Response.json(nuevoTour);
+    return new Response(JSON.stringify(nuevoTour), { status: 201 });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Error al subir imagen", detalle: err.message }),
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  await connectDB();
+
+  try {
+    const tours = await Tour.find();
+    return new Response(JSON.stringify(tours), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }

@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
-import Tour from "@/models/Tour";
 import { v2 as cloudinary } from "cloudinary";
+import Tour from "@/models/Tour";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,99 +8,91 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function GET(req, { params }) {
+export async function PUT(req, { params }) {
+  const { id } = params;
+  await connectDB();
+
+  const contentType = req.headers.get("content-type") || "";
+  if (!contentType.includes("multipart/form-data")) {
+    return new Response(
+      JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
+      { status: 400 }
+    );
+  }
+
+  const form = await req.formData();
+
+  const file = form.get("image");
+  const title = form.get("title");
+  const description = form.get("description");
+  const destination = form.get("destination");
+  const dates = form.get("dates");
+  const price = form.get("price");
+  const grupo = form.get("grupo");
+
   try {
-    await connectDB();
-    const { id } = params;
     const tour = await Tour.findById(id);
     if (!tour) {
-      return new Response("Tour no encontrado", { status: 404 });
-    }
-    return Response.json(tour);
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-}
-
-export async function PUT(req, { params }) {
-  try {
-    await connectDB();
-    const { id } = params;
-
-    const contentType = req.headers.get("content-type") || "";
-    if (!contentType.includes("multipart/form-data")) {
-      return new Response("Content-Type must be multipart/form-data", { status: 400 });
+      return new Response(JSON.stringify({ error: "Tour no encontrado" }), { status: 404 });
     }
 
-    const form = await req.formData();
-    const file = form.get("image");
-    const title = form.get("title")?.toString() || "";
-    const description = form.get("description")?.toString() || "";
-    const destination = form.get("destination")?.toString() || "";
-    const dates = form.get("dates")?.toString() ? JSON.parse(form.get("dates").toString()) : [];
-    const price = parseFloat(form.get("price")?.toString() || "0");
-    const grupo = form.get("grupo")?.toString() || undefined;
-    const imageUrl = form.get("imageUrl")?.toString() || undefined;
+    let image = tour.image; // URL actual
 
-    if (!title || !description || !destination || !dates.length || !price) {
-      return new Response("Faltan campos requeridos", { status: 400 });
-    }
-
-    let updateData = {
-      title,
-      description,
-      destination,
-      dates,
-      price,
-      grupo,
-    };
-
-    if (file && typeof file.arrayBuffer === "function") {
-      // Si hay nueva imagen, subir a Cloudinary
+    if (file && file.name) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      const uploadResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream({ folder: "tours" }, (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        }).end(buffer);
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: `tours/${title || tour.title}` },
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        ).end(buffer);
       });
-      updateData.image = uploadResult.secure_url;
-    } else if (imageUrl) {
-      // Mantener la imagen existente
-      updateData.image = imageUrl;
-    } else {
-      return new Response("Se requiere una imagen", { status: 400 });
+
+      image = result.secure_url;
     }
 
-    const updatedTour = await Tour.findByIdAndUpdate(id, updateData, { new: true });
+    tour.title = title || tour.title;
+    tour.description = description || tour.description;
+    tour.destination = destination || tour.destination;
+    tour.dates = dates || tour.dates;
+    tour.price = price || tour.price;
+    tour.grupo = grupo || tour.grupo;
+    tour.image = image;
 
-    if (!updatedTour) {
-      return new Response("Tour no encontrado", { status: 404 });
-    }
+    await tour.save();
 
-    return Response.json(updatedTour);
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify(tour), { status: 200 });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Error al actualizar tour", detalle: err.message }),
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(req, { params }) {
+  const { id } = params;
+  await connectDB();
+
   try {
-    await connectDB();
-    const { id } = params;
-    const deletedTour = await Tour.findByIdAndDelete(id);
-    if (!deletedTour) {
-      return new Response("Tour no encontrado", { status: 404 });
+    const tour = await Tour.findById(id);
+    if (!tour) {
+      return new Response(JSON.stringify({ error: "Tour no encontrado" }), { status: 404 });
     }
-    // Opcional: Eliminar la imagen de Cloudinary
-    if (deletedTour.image) {
-      const publicId = deletedTour.image.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(`tours/${publicId}`);
-    }
-    return new Response("Tour eliminado correctamente", { status: 200 });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+    await Tour.deleteOne({ _id: id });
+
+    // Opcional: eliminar imagen de Cloudinary (requiere guardar public_id)
+
+    return new Response(JSON.stringify({ message: "Tour eliminado" }), { status: 200 });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Error al eliminar tour", detalle: err.message }),
+      { status: 500 }
+    );
   }
 }

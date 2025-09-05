@@ -1,117 +1,163 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Card, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Save, X, Plus, Trash2, Calendar } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  MapPin,
+  Calendar,
+  Users,
+  DollarSign,
+} from "lucide-react"
+import { TourModal } from "@/components/admin/tour-modal"
+import { Tour } from "@/components/types/tour"
 
-interface Tour {
-  _id?: string;
-  title: string;
-  description: string;
-  destination: string;
-  dates: string[];
-  price: number;
-  image: string | File;
-  grupo?: string;
-}
+export default function ToursPage() {
+  const [tours, setTours] = useState<Tour[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedDestination, setSelectedDestination] = useState("Todos")
+  const [selectedGroup, setSelectedGroup] = useState("Todos")
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingTour, setEditingTour] = useState<Tour | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false) // <-- Flag para hidratación
 
-interface TourModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (tour: Tour) => Promise<void>;
-  tour?: Tour;
-}
-
-export function TourModal({ isOpen, onClose, onSave, tour }: TourModalProps) {
-  const [formData, setFormData] = useState<Tour>({
-    title: "",
-    description: "",
-    destination: "",
-    dates: [],
-    price: 0,
-    image: "",
-    grupo: "",
-  })
-
-  const [newDate, setNewDate] = useState("")
-  const [errors, setErrors] = useState<Partial<Record<keyof Tour, string>>>({})
-  const [apiError, setApiError] = useState<string | null>(null)
+  const destinations = ["Todos", ...new Set(tours.map((tour) => tour.destination))]
+  const grupos = ["Todos", ...new Set(tours.map((tour) => tour.grupo ?? ""))]
 
   useEffect(() => {
-    if (isOpen) {
-      if (tour) {
-        setFormData({
-          _id: tour._id,
-          title: tour.title,
-          description: tour.description,
-          destination: tour.destination,
-          dates: [...tour.dates],
-          price: tour.price,
-          image: tour.image,
-          grupo: tour.grupo || "",
-        })
+    setMounted(true) // <-- Marca que ya estamos en cliente
+  }, [])
+
+  useEffect(() => {
+    const fetchTours = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch("/api/tours")
+        if (!response.ok) {
+          throw new Error("Error al obtener los tours")
+        }
+        const data: Tour[] = await response.json()
+
+        // Parsear las fechas para cada tour
+        const toursParsed = data.map(tour => ({
+          ...tour,
+          dates: JSON.parse(tour.dates as unknown as string) // parsea las fechas
+        }))
+
+        setTours(toursParsed)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTours()
+  }, [])
+
+  const filteredTours = tours.filter((tour) => {
+    const matchesSearch =
+      tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tour.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tour.grupo && tour.grupo.toLowerCase().includes(searchTerm.toLowerCase()))
+
+    const matchesDestination =
+      selectedDestination === "Todos" || tour.destination === selectedDestination
+    const matchesGroup =
+      selectedGroup === "Todos" || tour.grupo === selectedGroup
+
+    return matchesSearch && matchesDestination && matchesGroup
+  })
+
+  const handleAddTour = () => {
+    setEditingTour(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditTour = (tour: Tour) => {
+    setEditingTour(tour)
+    setIsModalOpen(true)
+  }
+
+  const handleDeleteTour = async (tourId: string) => {
+    try {
+      const response = await fetch(`/api/tours/${tourId}`, {
+        method: "DELETE",
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Error al eliminar el tour")
+      }
+      setTours(tours.filter((tour) => tour._id !== tourId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido")
+    }
+  }
+
+  const handleSaveTour = async (tourData: Tour & { imageFile?: File }) => {
+    setLoading(true)
+    try {
+      const formData = new FormData()
+      formData.append("title", tourData.title)
+      formData.append("description", tourData.description)
+      formData.append("destination", tourData.destination)
+      formData.append("dates", JSON.stringify(tourData.dates))
+      formData.append("price", tourData.price.toString())
+      if (tourData.grupo) {
+        formData.append("grupo", tourData.grupo)
+      }
+      // `imageFile` solo si existe
+      if (tourData.imageFile) {
+        formData.append("image", tourData.imageFile)
+      }
+
+      const url = editingTour ? `/api/tours/${editingTour._id}` : "/api/tours"
+      const method = editingTour ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || `Error al ${editingTour ? "actualizar" : "crear"} el tour`)
+      }
+
+      const savedTour: Tour = await response.json()
+
+      if (editingTour) {
+        setTours(tours.map((tour) => (tour._id === savedTour._id ? savedTour : tour)))
       } else {
-        setFormData({
-          title: "",
-          description: "",
-          destination: "",
-          dates: [],
-          price: 0,
-          image: "",
-          grupo: "",
-        })
+        setTours([...tours, savedTour])
       }
-      setErrors({})
-      setNewDate("")
-      setApiError(null)
-    }
-  }, [isOpen, tour])
 
-  const validateForm = () => {
-    const newErrors: Partial<Record<keyof Tour, string>> = {}
-
-    if (!formData.title.trim()) newErrors.title = "El título es requerido"
-    if (!formData.description.trim()) newErrors.description = "La descripción es requerida"
-    if (!formData.destination.trim()) newErrors.destination = "El destino es requerido"
-    if (formData.price <= 0) newErrors.price = "El precio debe ser mayor a 0"
-    if (formData.dates.length === 0) newErrors.dates = "Debe agregar al menos una fecha"
-    if (!formData.image) newErrors.image = "Debes seleccionar una imagen"
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleInputChange = (field: keyof Tour, value: string | number | File) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+      setIsModalOpen(false)
+      setEditingTour(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido")
+    } finally {
+      setLoading(false)
     }
   }
 
-  const addDate = () => {
-    if (newDate && !formData.dates.includes(newDate) && !isNaN(new Date(newDate).getTime())) {
-      const sortedDates = [...formData.dates, newDate].sort()
-      setFormData((prev) => ({ ...prev, dates: sortedDates }))
-      setNewDate("")
-      if (errors.dates) {
-        setErrors((prev) => ({ ...prev, dates: "" }))
-      }
-    }
-  }
-
-  const removeDate = (dateToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      dates: prev.dates.filter((date) => date !== dateToRemove),
-    }))
-  }
-
-  const formatDateForDisplay = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
+    if (!mounted) return dateString // <-- devuelve sin formatear mientras no esté montado para evitar mismatch
     return new Date(dateString).toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "short",
@@ -119,257 +165,210 @@ export function TourModal({ isOpen, onClose, onSave, tour }: TourModalProps) {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!validateForm()) return
-    setApiError(null)
-
-    const form = new FormData()
-    form.append("title", formData.title)
-    form.append("description", formData.description)
-    form.append("destination", formData.destination)
-    form.append("price", Number(formData.price).toFixed(2))
-    form.append("dates", JSON.stringify(formData.dates))
-    if (formData.grupo) form.append("grupo", formData.grupo)
-
-    if (formData.image instanceof File) {
-      form.append("image", formData.image)
-    } else if (typeof formData.image === "string" && formData.image) {
-      form.append("imageUrl", formData.image)
-    } else {
-      setErrors((prev) => ({ ...prev, image: "Debes seleccionar una imagen" }))
-      return
-    }
-
-    try {
-      const res = await fetch(`/api/tours${tour ? `/${tour._id}` : ""}`, {
-        method: tour ? "PUT" : "POST",
-        body: form,
-      })
-
-      if (!res.ok) {
-        const error = await res.json()
-        setApiError(error?.error || res.statusText)
-        return
-      }
-
-      const savedTour = await res.json()
-      await onSave({ ...savedTour, id: savedTour._id }) // Map _id to id
-      onClose()
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Error en la petición"
-      setApiError(errorMessage)
-    }
+  const getNextDate = (dates: string[]): string => {
+    if (!dates || !Array.isArray(dates) || dates.length === 0) return "Sin fechas"
+    const today = new Date()
+    const futureDates = dates.filter((date) => new Date(date) >= today)
+    return futureDates.length > 0 ? futureDates[0] : dates[dates.length - 1]
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <MapPin className="w-5 h-5 text-accent" />
-            {tour ? "Editar Tour" : "Nuevo Tour"}
-          </DialogTitle>
-        </DialogHeader>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-balance">Gestión de Tours</h1>
+          <p className="text-muted-foreground mt-2">
+            Administra los tours y experiencias disponibles
+          </p>
+        </div>
+        <Button
+          onClick={handleAddTour}
+          className="bg-accent hover:bg-accent/90 text-accent-foreground"
+          disabled={loading}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Tour
+        </Button>
+      </div>
 
-        {apiError && <p className="text-sm text-destructive">{apiError}</p>}
+      {/* Error */}
+      {error && (
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md">
+          {error}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {formData.image && !(formData.image instanceof File) && (
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-muted max-w-2xl">
-              <img
-                src={formData.image || "/placeholder.svg"}
-                alt={formData.title || "Vista previa"}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg"
-                  e.currentTarget.alt = "Imagen no disponible"
-                }}
-              />
-            </div>
-          )}
+      {/* Filters */}
+      {!loading && (
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Buscar tours..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-input border-border text-foreground"
+            />
+          </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Columna Izquierda */}
-            <div className="space-y-4">
-              {/* Título */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Título del Tour *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  placeholder="Ej: Aventura en los Andes"
-                  className={`bg-input border-border ${errors.title ? "border-destructive" : ""}`}
-                  aria-label="Título del tour"
-                  aria-describedby={errors.title ? "title-error" : undefined}
+          <div className="flex gap-3">
+            <Select value={selectedDestination} onValueChange={setSelectedDestination}>
+              <SelectTrigger className="w-48 bg-input border-border">
+                <SelectValue placeholder="Destino" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {destinations.map((destination) => (
+                  <SelectItem key={destination} value={destination} className="text-popover-foreground">
+                    {destination}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger className="w-40 bg-input border-border">
+                <SelectValue placeholder="Grupo" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {grupos.map((grupo) => (
+                  <SelectItem key={grupo} value={grupo} className="text-popover-foreground">
+                    {grupo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Badge variant="secondary" className="bg-muted text-muted-foreground self-start lg:self-center">
+            {filteredTours.length} tour{filteredTours.length !== 1 ? "s" : ""}
+          </Badge>
+        </div>
+      )}
+
+      {/* Tours Grid */}
+      {!loading && (
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          {filteredTours.map((tour) => (
+            <Card key={tour._id} className="bg-card border-border overflow-hidden group hover:ring-2 hover:ring-accent/50 transition-all duration-200">
+              <div className="relative aspect-[16/10] overflow-hidden">
+                <img
+                  src={tour.image || "/placeholder.svg"}
+                  alt={tour.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {errors.title && (
-                  <p id="title-error" className="text-sm text-destructive">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Descripción */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  placeholder="Describe la experiencia del tour..."
-                  rows={4}
-                  className={`bg-input border-border resize-none ${errors.description ? "border-destructive" : ""}`}
-                  aria-label="Descripción del tour"
-                  aria-describedby={errors.description ? "description-error" : undefined}
-                />
-                {errors.description && (
-                  <p id="description-error" className="text-sm text-destructive">{errors.description}</p>
-                )}
-              </div>
-
-              {/* Destino */}
-              <div className="space-y-2">
-                <Label htmlFor="destination">Destino *</Label>
-                <Input
-                  id="destination"
-                  value={formData.destination}
-                  onChange={(e) => handleInputChange("destination", e.target.value)}
-                  placeholder="Ej: Cordillera de los Andes"
-                  className={`bg-input border-border ${errors.destination ? "border-destructive" : ""}`}
-                  aria-label="Destino del tour"
-                  aria-describedby={errors.destination ? "destination-error" : undefined}
-                />
-                {errors.destination && (
-                  <p id="destination-error" className="text-sm text-destructive">{errors.destination}</p>
-                )}
-              </div>
-
-              {/* Subida de Imagen */}
-              <div className="space-y-2">
-                <Label htmlFor="imageFile">Subir Imagen *</Label>
-                <Input
-                  id="imageFile"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    handleInputChange("image", file || "")
-                  }}
-                  className="bg-input border-border"
-                  aria-label="Subir imagen del tour"
-                  aria-describedby={errors.image ? "image-error" : undefined}
-                />
-                {errors.image && (
-                  <p id="image-error" className="text-sm text-destructive">{errors.image}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Columna Derecha */}
-            <div className="space-y-4">
-              {/* Precio */}
-              <div className="space-y-2">
-                <Label htmlFor="price">Precio *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange("price", parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className={`bg-input border-border ${errors.price ? "border-destructive" : ""}`}
-                  aria-label="Precio del tour"
-                  aria-describedby={errors.price ? "price-error" : undefined}
-                />
-                {errors.price && (
-                  <p id="price-error" className="text-sm text-destructive">{errors.price}</p>
-                )}
-              </div>
-
-              {/* Grupo (opcional) */}
-              <div className="space-y-2">
-                <Label htmlFor="grupo">Grupo (Opcional)</Label>
-                <Input
-                  id="grupo"
-                  value={formData.grupo}
-                  onChange={(e) => handleInputChange("grupo", e.target.value)}
-                  placeholder="Ej: Aventura, Relax, Cultural"
-                  className="bg-input border-border"
-                  aria-label="Grupo del tour"
-                />
-              </div>
-
-              {/* Fechas */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Fechas Disponibles *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="bg-input border-border"
-                    min={new Date().toISOString().split("T")[0]}
-                    aria-label="Seleccionar fecha disponible"
-                    aria-describedby={errors.dates ? "dates-error" : undefined}
-                  />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
                   <Button
-                    type="button"
-                    onClick={addDate}
                     size="sm"
-                    variant="outline"
-                    className="border-border bg-transparent"
-                    aria-label="Agregar fecha"
+                    variant="secondary"
+                    onClick={() => handleEditTour(tour)}
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    disabled={loading}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => tour._id && handleDeleteTour(tour._id)}
+                    className="bg-destructive/80 hover:bg-destructive text-destructive-foreground"
+                    disabled={loading}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto">
-                  {formData.dates.map((date) => (
-                    <Badge key={date} variant="secondary" className="bg-muted text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDateForDisplay(date)}
-                      <button
-                        type="button"
-                        onClick={() => removeDate(date)}
-                        className="ml-2 hover:text-destructive"
-                        aria-label={`Eliminar fecha ${formatDateForDisplay(date)}`}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
+
+                <div className="absolute top-3 right-3">
+                  <Badge className="bg-accent text-accent-foreground font-semibold">
+                    <DollarSign className="w-3 h-3 mr-1" />${tour.price}
+                  </Badge>
                 </div>
-                {errors.dates && (
-                  <p id="dates-error" className="text-sm text-destructive">{errors.dates}</p>
+
+                {tour.grupo && (
+                  <div className="absolute top-3 left-3">
+                    <Badge variant="secondary" className="bg-black/50 text-white border-white/20">
+                      <Users className="w-3 h-3 mr-1" />
+                      {tour.grupo}
+                    </Badge>
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Acciones */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <CardHeader className="p-5">
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-card-foreground leading-tight mb-2">
+                      {tour.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {tour.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 mr-2 text-accent" />
+                    <span className="truncate">{tour.destination}</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4 mr-2 text-accent" />
+                    <span>Próxima salida: {formatDate(getNextDate(tour.dates))}</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">Fechas disponibles:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(tour.dates) && tour.dates.slice(0, 3).map((date, index) => (
+                        <Badge key={index} variant="outline" className="text-xs border-border text-muted-foreground">
+                          {formatDate(date)}
+                        </Badge>
+                      ))}
+                      {Array.isArray(tour.dates) && tour.dates.length > 3 && (
+                        <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                          +{tour.dates.length - 3} más
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredTours.length === 0 && (
+        <div className="text-center py-12">
+          <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">No se encontraron tours</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchTerm || selectedDestination !== "Todos" || selectedGroup !== "Todos"
+              ? "Intenta ajustar los filtros de búsqueda"
+              : "Comienza agregando tu primer tour"}
+          </p>
+          {!searchTerm && selectedDestination === "Todos" && selectedGroup === "Todos" && (
             <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="border-border bg-transparent"
-              aria-label="Cancelar"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
+              onClick={handleAddTour}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              aria-label={tour ? "Actualizar tour" : "Guardar tour"}
+              disabled={loading}
             >
-              <Save className="w-4 h-4 mr-2" />
-              {tour ? "Actualizar" : "Guardar"}
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Primer Tour
             </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          )}
+        </div>
+      )}
+
+      <TourModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingTour(null)
+        }}
+        onSave={handleSaveTour}
+        tour={editingTour}
+      />
+    </div>
   )
 }
