@@ -1,49 +1,106 @@
 import { connectDB } from "@/lib/mongodb";
 import Tour from "@/models/Tour";
-import { NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
 
-export async function GET(request, { params }) {
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export async function GET(req, { params }) {
   try {
     await connectDB();
-    const tour = await Tour.findById(params.id);
+    const { id } = params;
+    const tour = await Tour.findById(id);
     if (!tour) {
-      return NextResponse.json({ message: "Tour not found" }, { status: 404 });
+      return new Response("Tour no encontrado", { status: 404 });
     }
-    return NextResponse.json(tour);
+    return Response.json(tour);
   } catch (error) {
-    console.error("Error fetching tour:", error);
-    return NextResponse.json({ message: "Error fetching tour" }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(req, { params }) {
   try {
     await connectDB();
-    const body = await request.json();
-    const tour = await Tour.findById(params.id);
-    if (!tour) {
-      return NextResponse.json({ message: "Tour not found" }, { status: 404 });
+    const { id } = params;
+
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return new Response("Content-Type must be multipart/form-data", { status: 400 });
     }
-    Object.assign(tour, body);
-    const updatedTour = await tour.save();
-    return NextResponse.json(updatedTour);
+
+    const form = await req.formData();
+    const file = form.get("image");
+    const title = form.get("title")?.toString() || "";
+    const description = form.get("description")?.toString() || "";
+    const destination = form.get("destination")?.toString() || "";
+    const dates = form.get("dates")?.toString() ? JSON.parse(form.get("dates").toString()) : [];
+    const price = parseFloat(form.get("price")?.toString() || "0");
+    const grupo = form.get("grupo")?.toString() || undefined;
+    const imageUrl = form.get("imageUrl")?.toString() || undefined;
+
+    if (!title || !description || !destination || !dates.length || !price) {
+      return new Response("Faltan campos requeridos", { status: 400 });
+    }
+
+    let updateData = {
+      title,
+      description,
+      destination,
+      dates,
+      price,
+      grupo,
+    };
+
+    if (file && typeof file.arrayBuffer === "function") {
+      // Si hay nueva imagen, subir a Cloudinary
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream({ folder: "tours" }, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }).end(buffer);
+      });
+      updateData.image = uploadResult.secure_url;
+    } else if (imageUrl) {
+      // Mantener la imagen existente
+      updateData.image = imageUrl;
+    } else {
+      return new Response("Se requiere una imagen", { status: 400 });
+    }
+
+    const updatedTour = await Tour.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!updatedTour) {
+      return new Response("Tour no encontrado", { status: 404 });
+    }
+
+    return Response.json(updatedTour);
   } catch (error) {
-    console.error("Error updating tour:", error);
-    return NextResponse.json({ message: "Error updating tour" }, { status: 400 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(req, { params }) {
   try {
     await connectDB();
-    const tour = await Tour.findById(params.id);
-    if (!tour) {
-      return NextResponse.json({ message: "Tour not found" }, { status: 404 });
+    const { id } = params;
+    const deletedTour = await Tour.findByIdAndDelete(id);
+    if (!deletedTour) {
+      return new Response("Tour no encontrado", { status: 404 });
     }
-    await tour.deleteOne();
-    return NextResponse.json({ message: "Tour deleted" });
+    // Opcional: Eliminar la imagen de Cloudinary
+    if (deletedTour.image) {
+      const publicId = deletedTour.image.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`tours/${publicId}`);
+    }
+    return new Response("Tour eliminado correctamente", { status: 200 });
   } catch (error) {
-    console.error("Error deleting tour:", error);
-    return NextResponse.json({ message: "Error deleting tour" }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }

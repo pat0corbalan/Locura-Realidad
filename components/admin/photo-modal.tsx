@@ -86,49 +86,53 @@ export function PhotoModal({ isOpen, onClose, onSave, photo }: PhotoModalProps) 
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    const isEditingWithoutNewFile = photo && !file;
+  const url = photo ? `/api/photos/${photo._id}` : "/api/photos";
+  const method = photo ? "PUT" : "POST";
 
-    const finalFormData = new FormData();
-    if (file) {
-      finalFormData.append("src", file); // ✅ CAMBIO AQUÍ
-    }
-    finalFormData.append("title", formData.title);
-    finalFormData.append("alt", formData.alt);
-    finalFormData.append("location", formData.location);
+  const finalFormData = new FormData();
+  if (file) {
+    finalFormData.append("src", file);
+  } else if (!photo) {
+    // Si no hay archivo y es creación, error (pero ya lo validamos antes)
+  }
+  finalFormData.append("title", formData.title);
+  finalFormData.append("alt", formData.alt);
+  finalFormData.append("location", formData.location);
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await fetch("/api/photos", {
-        method: "POST",
-        body: finalFormData,
-      });
+    const res = await fetch(url, {
+      method,
+      body: finalFormData,
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        if (data.errors) {
-          const newErrors: Record<string, string> = {};
-          for (const key in data.errors) {
-            newErrors[key] = data.errors[key].message;
-          }
-          setErrors(newErrors);
+    if (!res.ok) {
+      if (data.errors) {
+        const newErrors: Record<string, string> = {};
+        for (const key in data.errors) {
+          newErrors[key] = data.errors[key].message;
         }
-        throw new Error(data.message || "Error al guardar la foto");
+        setErrors(newErrors);
       }
-
-      onSave(data);
-      onClose();
-    } catch (error: any) {
-      console.error("Error al enviar el formulario:", error);
-    } finally {
-      setLoading(false);
+      throw new Error(data.message || "Error al guardar la foto");
     }
-  };
+
+    onSave(data);
+    onClose();
+  } catch (error: any) {
+    console.error("Error al enviar el formulario:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -142,14 +146,18 @@ export function PhotoModal({ isOpen, onClose, onSave, photo }: PhotoModalProps) 
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {(formData.src || file) && (
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-              <Image
-                src={file ? URL.createObjectURL(file) : formData.src}
-                alt={formData.alt || "Vista previa"}
-                fill
-                className="object-cover"
-              />
-            </div>
+        <div className="relative max-h-48 w-full rounded-lg overflow-hidden bg-muted">
+
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+            <Image
+              src={file ? URL.createObjectURL(file) : formData.src}
+              alt={formData.alt || "Vista previa"}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
+
           )}
 
           <div className="space-y-2">

@@ -1,69 +1,71 @@
-// import { connectDB } from "@/lib/mongodb";
-// import Tour from "@/models/Tour";
-// import { NextResponse } from "next/server";
+import { connectDB } from "@/lib/mongodb";
+import { v2 as cloudinary } from "cloudinary";
+import Tour from "@/models/Tour";
 
-// export async function GET() {
-//   try {
-//     await connectDB();
-//     const tours = await Tour.find();
-//     return NextResponse.json(tours);
-//   } catch (error) {
-//     console.error("Error fetching tours:", error);
-//     return NextResponse.json({ message: "Error fetching tours" }, { status: 500 });
-//   }
-// }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-
-// export async function POST(request) {
-//   try {
-//     await connectDB();
-//     const body = await request.json();
-//     const tour = new Tour(body);
-//     const newTour = await tour.save();
-//     return NextResponse.json(newTour, { status: 201 });
-//   } catch (error) {
-//     console.error("Error creating tour:", error);
-//     return NextResponse.json({ message: "Error creating tour" }, { status: 400 });
-//   }
-// }
-
-
-import { connectDB } from "../../../utils/mongoose";
-import { uploadToCloudinary } from "../../../utils/uploadToCloudinary";
-import Tour from "../../../models/Tour";
+export async function GET() {
+  try {
+    await connectDB();
+    const tours = await Tour.find();
+    return Response.json(tours);
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+}
 
 export async function POST(req) {
-  await connectDB();
-
-  const form = await req.formData();
-
-  const src = form.get("image");
-  const title = form.get("title");
-  const description = form.get("description");
-  const destination = form.get("destination");
-  const dates = form.get("dates");
-  const price = form.get("price");
-  const grupo = form.get("grupo");
-
   try {
-    let uploadedImage;
+    await connectDB();
 
-    if (src && src.name) {
-      uploadedImage = await uploadToCloudinary(src, `tours/${title}`);
+    const contentType = req.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return new Response("Content-Type must be multipart/form-data", { status: 400 });
     }
 
-    const newTour = await Tour.create({
+    const form = await req.formData();
+    const file = form.get("image");
+    const title = form.get("title")?.toString() || "";
+    const description = form.get("description")?.toString() || "";
+    const destination = form.get("destination")?.toString() || "";
+    const dates = form.get("dates")?.toString() ? JSON.parse(form.get("dates").toString()) : [];
+    const price = parseFloat(form.get("price")?.toString() || "0");
+    const grupo = form.get("grupo")?.toString() || undefined;
+
+    if (!title || !description || !destination || !dates.length || !price || !file) {
+      return new Response("Faltan campos requeridos", { status: 400 });
+    }
+
+    if (typeof file.arrayBuffer !== "function") {
+      return new Response("Imagen no válida", { status: 400 });
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream({ folder: "tours" }, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      }).end(buffer);
+    });
+
+    const nuevoTour = await Tour.create({
       title,
       description,
       destination,
       dates,
       price,
       grupo,
-      image: uploadedImage?.secure_url || "",
+      image: uploadResult.secure_url,
     });
 
-    return new Response(JSON.stringify(newTour), { status: 201 });
+    return Response.json(nuevoTour);
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }

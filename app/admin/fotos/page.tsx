@@ -62,9 +62,19 @@ export default function PhotosPage() {
     }
   }
 
-  const handlePhotoSaved = (newPhoto: Photo) => {
-    setPhotos((prev) => [...prev, newPhoto])
+  const handlePhotoSaved = (savedPhoto: Photo) => {
+    setPhotos((prev) => {
+      const exists = prev.some((p) => p._id === savedPhoto._id)
+      if (exists) {
+        // Reemplazar la foto editada
+        return prev.map((p) => (p._id === savedPhoto._id ? savedPhoto : p))
+      } else {
+        // Agregar nueva foto
+        return [...prev, savedPhoto]
+      }
+    })
   }
+
 
   return (
     <div className="space-y-6">
