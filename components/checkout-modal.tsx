@@ -27,7 +27,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [direccionEnvio, setDireccionEnvio] = React.useState("")
   const [aclaracion, setAclaracion] = React.useState("")
 
-  const negocioUbicacion = "Av. Siempre Viva 742, Springfield"
+  // const negocioUbicacion = "Av. Siempre Viva 742, Springfield"
 
   const handleEnviarWhatsapp = () => {
   const mensaje = `
@@ -37,7 +37,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 💳 Método de pago: ${pago}
 📦 Retiro o envío: ${retira}
 ${retira === "Envío a domicilio" ? `🏠 Dirección de envío: ${direccionEnvio}` : ""}
-📍 Ubicación del negocio: ${negocioUbicacion}
+
 
 📝 Aclaraciones:
 ${aclaracion ? aclaracion : "Ninguna"}
@@ -124,9 +124,9 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             </label>
           )}
 
-          <p className="text-sm text-gray-500 italic flex items-center gap-1">
+          {/* <p className="text-sm text-gray-500 italic flex items-center gap-1">
             <MapPin size={16} /> Ubicación del negocio: {negocioUbicacion}
-          </p>
+          </p> */}
 
           <label className="relative">
             <Send className="absolute left-3 top-3 text-gray-400" size={20} />
