@@ -1,16 +1,28 @@
-"use client"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
+import { Card, CardContent } from "./ui/card"
 
-export function ShoppingCartButton() {
-  const { state } = useCart()
+interface ShoppingCartButtonProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCheckout: () => void
+}
+
+export function ShoppingCartButton({ open, onOpenChange, onCheckout }: ShoppingCartButtonProps) {
+  const { state, dispatch } = useCart()
+
+  const handleProceedToCheckout = () => {
+    // Cierra el carrito
+    onOpenChange(false)
+    // Abre el modal de checkout
+    onCheckout()
+  }
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="relative bg-transparent">
           <ShoppingCart className="h-4 w-4 mr-2" />
@@ -25,6 +37,7 @@ export function ShoppingCartButton() {
           )}
         </Button>
       </SheetTrigger>
+
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
@@ -38,13 +51,13 @@ export function ShoppingCartButton() {
           </SheetDescription>
         </SheetHeader>
 
-        <ShoppingCartContent />
+        <ShoppingCartContent onProceedToCheckout={handleProceedToCheckout} />
       </SheetContent>
     </Sheet>
   )
 }
 
-function ShoppingCartContent() {
+function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () => void }) {
   const { state, dispatch } = useCart()
 
   const updateQuantity = (id: number, quantity: number) => {
@@ -73,8 +86,8 @@ function ShoppingCartContent() {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto py-4">
         <div className="space-y-4">
-          {state.items.map((item) => (
-            <Card key={item.id} className="bg-card border-border">
+          {state.items.map((item, index) => (
+            <Card key={item.id ?? `item-${index}`} className="bg-card border-border">
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <img
@@ -95,6 +108,7 @@ function ShoppingCartContent() {
                           size="icon"
                           className="h-8 w-8 bg-transparent"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
@@ -137,7 +151,7 @@ function ShoppingCartContent() {
           </div>
 
           <div className="space-y-2">
-            <Button className="w-full" size="lg">
+            <Button className="w-full" size="lg" onClick={onProceedToCheckout}>
               Proceder al Pago
             </Button>
 

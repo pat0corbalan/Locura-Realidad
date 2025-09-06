@@ -1,61 +1,109 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Package, MapPin, Users, TrendingUp, Eye } from "lucide-react"
+import { Camera, Package, MapPin, TrendingUp, Eye } from "lucide-react"
 
-const stats = [
-  {
-    title: "Total Fotos",
-    value: "1,234",
-    description: "Fotos subidas este mes",
-    icon: Camera,
-    trend: "+12%",
-  },
-  {
-    title: "Productos",
-    value: "89",
-    description: "Productos activos",
-    icon: Package,
-    trend: "+5%",
-  },
-  {
-    title: "Tours",
-    value: "23",
-    description: "Tours disponibles",
-    icon: MapPin,
-    trend: "+8%",
-  },
-  {
-    title: "Usuarios",
-    value: "456",
-    description: "Usuarios registrados",
-    icon: Users,
-    trend: "+15%",
-  },
-]
+// Importa tus tipos
+import { Photo } from "@/components/types/photo"
+import { Product } from "@/components/types/product"
+import { Tour } from "@/components/types/tour"
 
-const recentActivity = [
-  {
-    action: "Nueva foto subida",
-    item: "Atardecer en la playa",
-    time: "Hace 2 minutos",
-  },
-  {
-    action: "Producto actualizado",
-    item: "Camiseta Vintage",
-    time: "Hace 15 minutos",
-  },
-  {
-    action: "Tour creado",
-    item: "Aventura en la Montaña",
-    time: "Hace 1 hora",
-  },
-  {
-    action: "Usuario registrado",
-    item: "maria.gonzalez@email.com",
-    time: "Hace 2 horas",
-  },
-]
+// Definir la interfaz para los datos combinados
+interface Data {
+  photosData: Photo[]
+  productsData: Product[]
+  toursData: Tour[]
+}
+
+// Función para obtener los datos de las APIs
+const fetchData = async (): Promise<Data> => {
+  try {
+    const [photosRes, toursRes, productsRes] = await Promise.all([
+      fetch("/api/photos"),
+      fetch("/api/tours"),
+      fetch("/api/products"),
+    ])
+
+    const [photosData, toursData, productsData] = await Promise.all([
+      photosRes.json(),
+      toursRes.json(),
+      productsRes.json(),
+    ])
+
+    return { photosData, toursData, productsData }
+  } catch (error) {
+    console.error("Error fetching data", error)
+    return { photosData: [], toursData: [], productsData: [] }
+  }
+}
 
 export default function AdminDashboard() {
+  const [data, setData] = useState<Data>({
+    photosData: [],
+    toursData: [],
+    productsData: [],
+  })
+
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      const result = await fetchData()
+      setData(result)
+      setLoading(false)
+    }
+
+    loadData()
+  }, [])
+
+  // Calculando los stats basados en los datos obtenidos
+  const stats = [
+    {
+      title: "Total Fotos",
+      value: data.photosData.length,
+      description: "Fotos subidas este mes",
+      icon: Camera,
+      trend: "+12%", // Puedes hacer cálculos dinámicos si tienes un historial de fotos
+    },
+    {
+      title: "Productos",
+      value: data.productsData.length,
+      description: "Productos activos",
+      icon: Package,
+      trend: "+5%", // También se puede hacer dinámico si tienes datos de ventas o cambios
+    },
+    {
+      title: "Tours",
+      value: data.toursData.length,
+      description: "Tours disponibles",
+      icon: MapPin,
+      trend: "+8%", // Igual que los demás
+    },
+  ]
+
+  const recentActivity = [
+    {
+      action: "Nueva foto subida",
+      item: data.photosData[0]?.title || "N/A", // Usar el primer elemento de las fotos
+      time: "Hace 2 minutos",
+    },
+    {
+      action: "Producto actualizado",
+      item: data.productsData[0]?.name || "N/A", // Lo mismo para productos
+      time: "Hace 15 minutos",
+    },
+    {
+      action: "Tour creado",
+      item: data.toursData[0]?.title || "N/A", // Lo mismo para tours
+      time: "Hace 1 hora",
+    },
+  ]
+
+  if (loading) {
+    return <div>Cargando...</div>
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -65,7 +113,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.title} className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -85,7 +133,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-1">
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-card-foreground">Actividad Reciente</CardTitle>
@@ -103,38 +151,6 @@ export default function AdminDashboard() {
                   <div className="text-xs text-muted-foreground">{activity.time}</div>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-card-foreground">Accesos Rápidos</CardTitle>
-            <CardDescription>Acciones más utilizadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              <button className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent/10 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Camera className="h-5 w-5 text-accent" />
-                  <span className="text-sm font-medium text-foreground">Subir Nueva Foto</span>
-                </div>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent/10 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <Package className="h-5 w-5 text-accent" />
-                  <span className="text-sm font-medium text-foreground">Crear Producto</span>
-                </div>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent/10 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <MapPin className="h-5 w-5 text-accent" />
-                  <span className="text-sm font-medium text-foreground">Nuevo Tour</span>
-                </div>
-                <Eye className="h-4 w-4 text-muted-foreground" />
-              </button>
             </div>
           </CardContent>
         </Card>

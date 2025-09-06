@@ -1,75 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Photo {
-  id: number
+  _id: string
   src: string
   alt: string
   title: string
   location: string
 }
 
-const photos: Photo[] = [
-  {
-    id: 1,
-    src: "/gallery-rock-concert-crowd-energy.png",
-    alt: "Multitud en concierto de rock",
-    title: "Energía Pura",
-    location: "Londres, Reino Unido",
-  },
-  {
-    id: 2,
-    src: "/gallery-vintage-guitar-collection-studio.png",
-    alt: "Colección de guitarras vintage",
-    title: "Guitarras Legendarias",
-    location: "Abbey Road Studios",
-  },
-  {
-    id: 3,
-    src: "/gallery-rock-fans-tour-group-happy.png",
-    alt: "Grupo de fans en tour",
-    title: "Momentos Únicos",
-    location: "Berlín, Alemania",
-  },
-  {
-    id: 4,
-    src: "/gallery-historic-rock-venue-stage.png",
-    alt: "Escenario histórico de rock",
-    title: "Escenarios Míticos",
-    location: "The Cavern Club",
-  },
-  {
-    id: 5,
-    src: "/gallery-vinyl-records-collection-wall.png",
-    alt: "Colección de vinilos en pared",
-    title: "Tesoros Musicales",
-    location: "Seattle, Estados Unidos",
-  },
-  {
-    id: 6,
-    src: "/gallery-rock-memorabilia-museum-display.png",
-    alt: "Memorabilia de rock en museo",
-    title: "Historia del Rock",
-    location: "Rock and Roll Hall of Fame",
-  },
-]
-
 export function PhotoGallery() {
+  const [photos, setPhotos] = useState<Photo[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  // Cargar fotos del backend
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const res = await fetch("/api/photos")
+        const data = await res.json()
+        setPhotos(data)
+      } catch (error) {
+        console.error("Error al cargar fotos:", error)
+      }
+    }
+
+    fetchPhotos()
+  }, [])
+
   const openModal = (photo: Photo) => {
     setSelectedPhoto(photo)
-    setCurrentIndex(photos.findIndex((p) => p.id === photo.id))
+    setCurrentIndex(photos.findIndex((p) => p._id === photo._id))
   }
 
-  const closeModal = () => {
-    setSelectedPhoto(null)
-  }
+  const closeModal = () => setSelectedPhoto(null)
 
   const nextPhoto = () => {
     const nextIndex = (currentIndex + 1) % photos.length
@@ -88,7 +57,7 @@ export function PhotoGallery() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {photos.map((photo) => (
           <Card
-            key={photo.id}
+            key={photo._id}
             className="group cursor-pointer overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-300"
             onClick={() => openModal(photo)}
           >

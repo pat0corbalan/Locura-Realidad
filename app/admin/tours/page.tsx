@@ -165,12 +165,27 @@ export default function ToursPage() {
     })
   }
 
-  const getNextDate = (dates: string[]): string => {
-    if (!dates || !Array.isArray(dates) || dates.length === 0) return "Sin fechas"
-    const today = new Date()
-    const futureDates = dates.filter((date) => new Date(date) >= today)
-    return futureDates.length > 0 ? futureDates[0] : dates[dates.length - 1]
+const getNextDate = (dates: string[]): string => {
+  if (!dates || !Array.isArray(dates) || dates.length === 0) return "Sin fechas"
+  const today = new Date()
+  // Convierte fechas a objetos Date válidos
+  const validDates = dates
+    .map(date => new Date(date))
+    .filter(dateObj => !isNaN(dateObj.getTime())) // solo fechas válidas
+  if (validDates.length === 0) return "Sin fechas"
+
+  // Filtra fechas >= hoy
+  const futureDates = validDates.filter(dateObj => dateObj >= today)
+  if (futureDates.length > 0) {
+    // Ordena y toma la más próxima
+    futureDates.sort((a, b) => a.getTime() - b.getTime())
+    return futureDates[0].toISOString()
   }
+  // Si no hay futuras, devuelve la última pasada
+  validDates.sort((a, b) => a.getTime() - b.getTime())
+  return validDates[validDates.length - 1].toISOString()
+}
+
 
   return (
     <div className="space-y-6">
