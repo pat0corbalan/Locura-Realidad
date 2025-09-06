@@ -1,19 +1,18 @@
+// models/Product.js
 import mongoose from "mongoose";
 
-const productSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true },         // Precio de venta
-    originalPrice: { type: Number },                 // Precio sin descuento (opcional)
-    costPrice: { type: Number, required: true },     // 💰 Precio de costo (nuevo campo)
-    image: { type: String, required: true },
-    category: { type: String, required: true },
-    rating: { type: Number, required: true },
-    inStock: { type: Boolean, required: true },
-    sizes: { type: [String], default: [] },
-  },
-  { timestamps: true }
-);
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
+  costPrice: { type: Number, required: true },
+  image: { type: String, required: true },
+  imagePublicId: { type: String }, // Nuevo campo
+  category: { type: String, required: true },
+  rating: { type: Number, default: 5 },
+  inStock: { type: Boolean, default: true },
+  sizes: [{ type: String }],
+});
 
 export default mongoose.models.Product || mongoose.model("Product", productSchema);

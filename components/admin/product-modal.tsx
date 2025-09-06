@@ -1,70 +1,63 @@
-"use client"
+// components/admin/product-modal.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Package, Save, X, Plus, Trash2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Package, Save, X, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Product, ProductModalProps } from "@/components/types/product";
 
-interface Product {
-  id?: number
-  name: string
-  description: string
-  price: number
-  originalPrice: number
-  costPrice: number
-  image: string
-  category: string
-  rating: number
-  inStock: boolean
-  sizes: string[]
+const categories = ["Ropa", "Accesorios", "Hogar", "Deportes", "Tecnología"];
+
+interface Errors {
+  [key: string]: string;
 }
 
-interface ProductModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSave: (product: Product) => void
-  product?: Product | null
+interface FormProduct extends Omit<Product, "image"> {
+  image: File | string | null;
 }
-
-const categories = ["Ropa", "Accesorios", "Hogar", "Deportes", "Tecnología"]
 
 export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormProduct>({
     name: "",
     description: "",
     price: 0,
     originalPrice: 0,
     costPrice: 0,
-    image: "",
+    image: null,
     category: "",
     rating: 5,
     inStock: true,
     sizes: [],
-  })
+  });
 
-  const [newSize, setNewSize] = useState("")
-  const [errors, setErrors] = useState({})
+  const [newSize, setNewSize] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
       setFormData({
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        costPrice: product.costPrice,
-        image: product.image,
-        category: product.category,
-        rating: product.rating,
-        inStock: product.inStock,
-        sizes: [...product.sizes],
-      })
+        _id: product._id,
+        name: product.name || "",
+        description: product.description || "",
+        price: product.price || 0,
+        originalPrice: product.originalPrice || 0,
+        costPrice: product.costPrice || 0,
+        image: product.image || null,
+        category: product.category || "",
+        rating: product.rating || 5,
+        inStock: product.inStock ?? true,
+        sizes: product.sizes || [],
+      });
+      setImagePreview(product.image || null);
     } else {
       setFormData({
         name: "",
@@ -72,86 +65,143 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         price: 0,
         originalPrice: 0,
         costPrice: 0,
-        image: "",
+        image: null,
         category: "",
         rating: 5,
         inStock: true,
         sizes: [],
-      })
+      });
+      setImagePreview(null);
     }
-    setErrors({})
-    setNewSize("")
-  }, [product, isOpen])
+    setErrors({});
+    setNewSize("");
+  }, [product, isOpen]);
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: Errors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "El nombre es requerido"
+      newErrors.name = "El nombre es requerido";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida"
+      newErrors.description = "La descripción es requerida";
     }
 
     if (!formData.category) {
-      newErrors.category = "La categoría es requerida"
+      newErrors.category = "La categoría es requerida";
     }
 
     if (formData.price <= 0) {
-      newErrors.price = "El precio debe ser mayor a 0"
+      newErrors.price = "El precio debe ser mayor a 0";
     }
 
     if (formData.originalPrice <= 0) {
-      newErrors.originalPrice = "El precio original debe ser mayor a 0"
+      newErrors.originalPrice = "El precio original debe ser mayor a 0";
     }
 
     if (formData.costPrice <= 0) {
-      newErrors.costPrice = "El precio de costo debe ser mayor a 0"
+      newErrors.costPrice = "El precio de costo debe ser mayor a 0";
     }
 
     if (formData.costPrice >= formData.price) {
-      newErrors.costPrice = "El precio de costo debe ser menor al precio de venta"
+      newErrors.costPrice = "El precio de costo debe ser menor al precio de venta";
     }
 
     if (formData.sizes.length === 0) {
-      newErrors.sizes = "Debe agregar al menos una talla"
+      newErrors.sizes = "Debe agregar al menos una talla";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (validateForm()) {
-      onSave(formData)
+    if (!product && !formData.image) {
+      newErrors.image = "La imagen es requerida para nuevos productos";
     }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  const form = new FormData();
+  form.append("name", formData.name);
+  form.append("description", formData.description);
+  form.append("price", formData.price.toString());
+  form.append("originalPrice", formData.originalPrice.toString());
+  form.append("costPrice", formData.costPrice.toString());
+  form.append("category", formData.category);
+  form.append("rating", formData.rating.toString());
+  form.append("inStock", formData.inStock.toString());
+  formData.sizes.forEach((size) => form.append("sizes", size));
+
+  if (formData.image instanceof File) {
+    form.append("image", formData.image);
   }
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  try {
+    const url = product?._id ? `/api/products/${product._id}` : "/api/products";
+    const method = product?._id ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method,
+      body: form,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Error al guardar el producto");
+    }
+
+    onSave({
+      ...formData,
+      _id: data._id || product?._id,
+      image: data.image || formData.image || product?.image || null,
+    } as Product);
+
+    toast.success(product ? "Producto actualizado" : "Producto creado");
+  } catch (error: any) {
+    console.error("Error al guardar el producto:", error);
+    toast.error(error.message || "Error al guardar el producto.");
+  }
+};
+
+
+  const handleInputChange = (field: keyof FormProduct, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
-  }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, image: file }));
+      setImagePreview(URL.createObjectURL(file));
+      if (errors.image) {
+        setErrors((prev) => ({ ...prev, image: "" }));
+      }
+    }
+  };
 
   const addSize = () => {
     if (newSize.trim() && !formData.sizes.includes(newSize.trim())) {
-      setFormData((prev) => ({ ...prev, sizes: [...prev.sizes, newSize.trim()] }))
-      setNewSize("")
+      setFormData((prev) => ({ ...prev, sizes: [...prev.sizes, newSize.trim()] }));
+      setNewSize("");
       if (errors.sizes) {
-        setErrors((prev) => ({ ...prev, sizes: "" }))
+        setErrors((prev) => ({ ...prev, sizes: "" }));
       }
     }
-  }
+  };
 
-  const removeSize = (sizeToRemove) => {
+  const removeSize = (sizeToRemove: string) => {
     setFormData((prev) => ({
       ...prev,
       sizes: prev.sizes.filter((size) => size !== sizeToRemove),
-    }))
-  }
+    }));
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -164,24 +214,21 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Preview */}
-          {formData.image && (
+          {imagePreview && (
             <div className="relative aspect-video rounded-lg overflow-hidden bg-muted max-w-md">
               <img
-                src={formData.image || "/placeholder.svg"}
+                src={imagePreview}
                 alt={formData.name || "Vista previa"}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.style.display = "none"
+                  e.currentTarget.style.display = "none";
                 }}
               />
             </div>
           )}
 
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Left Column */}
             <div className="space-y-4">
-              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
                   Nombre del Producto *
@@ -196,7 +243,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-medium">
                   Descripción *
@@ -212,7 +258,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
               </div>
 
-              {/* Category */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Categoría *</Label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
@@ -230,24 +275,22 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
               </div>
 
-              {/* Image URL */}
               <div className="space-y-2">
                 <Label htmlFor="image" className="text-sm font-medium">
-                  URL de la Imagen
+                  Imagen del Producto *
                 </Label>
                 <Input
                   id="image"
-                  value={formData.image}
-                  onChange={(e) => handleInputChange("image", e.target.value)}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  className="bg-input border-border"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className={`bg-input border-border ${errors.image ? "border-destructive" : ""}`}
                 />
+                {errors.image && <p className="text-sm text-destructive">{errors.image}</p>}
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="space-y-4">
-              {/* Pricing */}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="price" className="text-sm font-medium">
@@ -301,7 +344,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 </div>
               </div>
 
-              {/* Rating */}
               <div className="space-y-2">
                 <Label htmlFor="rating" className="text-sm font-medium">
                   Rating (1-5)
@@ -318,7 +360,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 />
               </div>
 
-              {/* Stock Status */}
               <div className="flex items-center space-x-2">
                 <Switch
                   id="inStock"
@@ -330,7 +371,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 </Label>
               </div>
 
-              {/* Sizes */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Tallas/Tamaños *</Label>
                 <div className="flex gap-2">
@@ -341,8 +381,8 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                     className="bg-input border-border"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
-                        e.preventDefault()
-                        addSize()
+                        e.preventDefault();
+                        addSize();
                       }
                     }}
                   />
@@ -371,7 +411,6 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button type="button" variant="outline" onClick={onClose} className="border-border bg-transparent">
               <X className="w-4 h-4 mr-2" />
@@ -385,5 +424,5 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

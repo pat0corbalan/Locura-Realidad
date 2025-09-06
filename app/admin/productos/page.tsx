@@ -1,149 +1,111 @@
-"use client"
+// app/admin/productos/page.tsx
+"use client";
 
-import { useState } from "react"
-import { Card, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Search, Edit, Trash2, Star, Package, AlertCircle } from "lucide-react"
-import { ProductModal } from "@/components/admin/product-modal"
+import { useState, useEffect } from "react";
+import { Card, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Edit, Trash2, Star, Package, AlertCircle } from "lucide-react";
+import { ProductModal } from "@/components/admin/product-modal";
+import { toast } from "sonner";
+import { Product } from "@/components/types/product"; // Importar la interfaz compartida
 
-// Mock data for products
-const mockProducts = [
-  {
-    id: 1,
-    name: "Camiseta Vintage Rock",
-    description: "Camiseta de algodón 100% con diseño vintage de bandas de rock clásico",
-    price: 29.99,
-    originalPrice: 39.99,
-    costPrice: 15.0,
-    image: "/vintage-rock-tshirt.jpg",
-    category: "Ropa",
-    rating: 4.5,
-    inStock: true,
-    sizes: ["S", "M", "L", "XL"],
-  },
-  {
-    id: 2,
-    name: "Mochila de Aventura",
-    description: "Mochila resistente al agua perfecta para excursiones y aventuras al aire libre",
-    price: 89.99,
-    originalPrice: 120.0,
-    costPrice: 45.0,
-    image: "/adventure-backpack.jpg",
-    category: "Accesorios",
-    rating: 4.8,
-    inStock: true,
-    sizes: ["Única"],
-  },
-  {
-    id: 3,
-    name: "Gafas de Sol Polarizadas",
-    description: "Gafas de sol con lentes polarizadas y protección UV400",
-    price: 45.99,
-    originalPrice: 65.0,
-    costPrice: 22.0,
-    image: "/polarized-sunglasses.jpg",
-    category: "Accesorios",
-    rating: 4.2,
-    inStock: false,
-    sizes: ["Única"],
-  },
-  {
-    id: 4,
-    name: "Sudadera Urbana",
-    description: "Sudadera con capucha de estilo urbano, perfecta para el día a día",
-    price: 54.99,
-    originalPrice: 69.99,
-    costPrice: 28.0,
-    image: "/urban-hoodie.jpg",
-    category: "Ropa",
-    rating: 4.6,
-    inStock: true,
-    sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-  },
-  {
-    id: 5,
-    name: "Botella Térmica",
-    description: "Botella térmica de acero inoxidable que mantiene la temperatura por 12 horas",
-    price: 24.99,
-    originalPrice: 34.99,
-    costPrice: 12.0,
-    image: "/thermal-bottle.jpg",
-    category: "Hogar",
-    rating: 4.7,
-    inStock: true,
-    sizes: ["500ml", "750ml", "1L"],
-  },
-]
-
-const categories = ["Todas", "Ropa", "Accesorios", "Hogar", "Deportes", "Tecnología"]
+const categories = ["Todas", "Ropa", "Accesorios", "Hogar", "Deportes", "Tecnología"];
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState(mockProducts)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("Todas")
-  const [stockFilter, setStockFilter] = useState("Todos")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState(null)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Todas");
+  const [stockFilter, setStockFilter] = useState("Todos");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("/api/products");
+      const data = await response.json();
+      if (response.ok) {
+        setProducts(data);
+      } else {
+        toast.error(data.error || "Error al cargar los productos");
+      }
+    } catch (error) {
+      toast.error("Error al cargar los productos");
+    }
+  };
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = selectedCategory === "Todas" || product.category === selectedCategory
+    const matchesCategory = selectedCategory === "Todas" || product.category === selectedCategory;
     const matchesStock =
       stockFilter === "Todos" ||
       (stockFilter === "En Stock" && product.inStock) ||
-      (stockFilter === "Sin Stock" && !product.inStock)
+      (stockFilter === "Sin Stock" && !product.inStock);
 
-    return matchesSearch && matchesCategory && matchesStock
-  })
+    return matchesSearch && matchesCategory && matchesStock;
+  });
 
   const handleAddProduct = () => {
-    setEditingProduct(null)
-    setIsModalOpen(true)
-  }
+    setEditingProduct(null);
+    setIsModalOpen(true);
+  };
 
-  const handleEditProduct = (product) => {
-    setEditingProduct(product)
-    setIsModalOpen(true)
-  }
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsModalOpen(true);
+  };
 
-  const handleDeleteProduct = (productId) => {
-    setProducts(products.filter((product) => product.id !== productId))
-  }
-
-  const handleSaveProduct = (productData) => {
-    if (editingProduct) {
-      setProducts(
-        products.map((product) =>
-          product.id === editingProduct.id ? { ...productData, id: editingProduct.id } : product,
-        ),
-      )
-    } else {
-      const newProduct = { ...productData, id: Date.now() }
-      setProducts([...products, newProduct])
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setProducts(products.filter((product) => product._id !== productId));
+        toast.success("Producto eliminado");
+      } else {
+        toast.error(data.error || "Error al eliminar el producto");
+      }
+    } catch (error) {
+      toast.error("Error al eliminar el producto");
     }
-    setIsModalOpen(false)
-    setEditingProduct(null)
-  }
+  };
 
-  const renderStars = (rating) => {
+  const handleSaveProduct = (productData: Product) => {
+    setProducts((prev) =>
+      editingProduct
+        ? prev.map((product) =>
+            product._id === productData._id ? { ...productData } : product,
+          )
+        : [...prev, { ...productData }],
+    );
+    toast.success(editingProduct ? "Producto actualizado" : "Producto creado");
+    setIsModalOpen(false);
+    setEditingProduct(null);
+  };
+
+  const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
         className={`w-3 h-3 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
       />
-    ))
-  }
+    ));
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-balance">Gestión de Productos</h1>
@@ -155,7 +117,6 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -204,11 +165,10 @@ export default function ProductsPage() {
         </Badge>
       </div>
 
-      {/* Products Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredProducts.map((product) => (
           <Card
-            key={product.id}
+            key={product._id}
             className="bg-card border-border overflow-hidden group hover:ring-2 hover:ring-accent/50 transition-all duration-200"
           >
             <div className="relative aspect-square overflow-hidden">
@@ -216,6 +176,9 @@ export default function ProductsPage() {
                 src={product.image || "/placeholder.svg"}
                 alt={product.name}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
                 <Button
@@ -229,14 +192,13 @@ export default function ProductsPage() {
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDeleteProduct(product.id)}
+                  onClick={() => handleDeleteProduct(product._id!)}
                   className="bg-destructive/80 hover:bg-destructive text-destructive-foreground"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
 
-              {/* Stock Badge */}
               <div className="absolute top-2 right-2">
                 {product.inStock ? (
                   <Badge className="bg-green-600 text-white">En Stock</Badge>
@@ -260,27 +222,24 @@ export default function ProductsPage() {
 
                 <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
 
-                {/* Rating */}
                 <div className="flex items-center gap-1">
                   {renderStars(product.rating)}
                   <span className="text-xs text-muted-foreground ml-1">({product.rating})</span>
                 </div>
 
-                {/* Pricing */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-accent">${product.price}</span>
+                    <span className="text-lg font-bold text-accent">${product.price.toFixed(2)}</span>
                     {product.originalPrice > product.price && (
-                      <span className="text-sm text-muted-foreground line-through">${product.originalPrice}</span>
+                      <span className="text-sm text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>Costo: ${product.costPrice}</span>
+                    <span>Costo: ${product.costPrice.toFixed(2)}</span>
                     <span>Margen: {Math.round(((product.price - product.costPrice) / product.price) * 100)}%</span>
                   </div>
                 </div>
 
-                {/* Sizes */}
                 <div className="flex flex-wrap gap-1">
                   {product.sizes.map((size) => (
                     <Badge key={size} variant="secondary" className="text-xs bg-muted text-muted-foreground">
@@ -294,7 +253,6 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* Empty State */}
       {filteredProducts.length === 0 && (
         <div className="text-center py-12">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -313,16 +271,15 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Product Modal */}
       <ProductModal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false)
-          setEditingProduct(null)
+          setIsModalOpen(false);
+          setEditingProduct(null);
         }}
         onSave={handleSaveProduct}
         product={editingProduct}
       />
     </div>
-  )
+  );
 }
