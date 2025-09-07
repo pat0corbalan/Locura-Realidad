@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react"
 
+import { useCart } from "@/contexts/cart-context" // 👈 IMPORTANTE
+
 interface CheckoutModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -27,39 +29,46 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [direccionEnvio, setDireccionEnvio] = React.useState("")
   const [aclaracion, setAclaracion] = React.useState("")
 
-  // const negocioUbicacion = "Av. Siempre Viva 742, Springfield"
+  const { state } = useCart() // 👈 accedemos al carrito
 
   const handleEnviarWhatsapp = () => {
-  const mensaje = `
-¡Hola! Me gustaría realizar un pedido con los siguientes datos:
+    const productosTexto = state.items
+      .map((item) => {
+        const sizeText = item.size ? ` - Talle: ${item.size}` : "";
+        return `- ${item.name}${sizeText} (x${item.quantity})`
+      })
+      .join("\n")
+
+    const mensaje = `¡Hola! Me gustaría realizar un pedido con los siguientes datos:
 
 👤 Nombre y Apellido: ${nombre} ${apellido}
 💳 Método de pago: ${pago}
 📦 Retiro o envío: ${retira}
 ${retira === "Envío a domicilio" ? `🏠 Dirección de envío: ${direccionEnvio}` : ""}
 
+🛍️ Productos:
+${productosTexto}
 
 📝 Aclaraciones:
 ${aclaracion ? aclaracion : "Ninguna"}
 
 Quedo atento/a a la confirmación. ¡Muchas gracias!
-  `
-  const url = `https://wa.me/543856128340?text=${encodeURIComponent(mensaje)}`
-  window.open(url, "_blank")
-}
+    `
 
+    const url = `https://wa.me/543856128340?text=${encodeURIComponent(mensaje)}`
+    window.open(url, "_blank")
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000]" />
       <Dialog.Content className="fixed top-1/2 left-1/2 max-w-md w-full p-7 bg-white rounded-xl shadow-2xl -translate-x-1/2 -translate-y-1/2 z-[1001]">
-
         <Dialog.Title className="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2">
           <ShoppingCart size={28} /> Completa tus datos
         </Dialog.Title>
 
         <div className="flex flex-col space-y-5">
-
+          {/* Nombre */}
           <label className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -71,6 +80,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             />
           </label>
 
+          {/* Apellido */}
           <label className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -82,6 +92,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             />
           </label>
 
+          {/* Método de pago */}
           <label className="relative">
             <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <select
@@ -94,6 +105,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             </select>
           </label>
 
+          {/* Envío o retiro */}
           <label className="relative">
             {retira === "Retirar en local" ? (
               <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -110,7 +122,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             </select>
           </label>
 
-          {/* Aquí mostramos el input solo si eligió envío a domicilio */}
+          {/* Dirección de envío (condicional) */}
           {retira === "Envío a domicilio" && (
             <label className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -124,10 +136,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             </label>
           )}
 
-          {/* <p className="text-sm text-gray-500 italic flex items-center gap-1">
-            <MapPin size={16} /> Ubicación del negocio: {negocioUbicacion}
-          </p> */}
-
+          {/* Aclaración */}
           <label className="relative">
             <Send className="absolute left-3 top-3 text-gray-400" size={20} />
             <textarea
@@ -139,6 +148,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
             />
           </label>
 
+          {/* Botones */}
           <div className="flex justify-end gap-3 mt-6">
             <Button onClick={handleEnviarWhatsapp} className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition flex items-center gap-2">
               <Send size={20} /> Enviar a Whatsapp

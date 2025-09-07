@@ -102,7 +102,7 @@ export default function HomePage() {
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-6">
-              {["tours", "gallery", "store"].map((section) => (
+              {["tours", "Galeria", "Tienda"].map((section) => (
                 <a
                   key={section}
                   href={`#${section}`}
@@ -140,7 +140,7 @@ export default function HomePage() {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div id="mobile-menu" className="mt-4 flex flex-col space-y-4 md:hidden text-center">
-              {["tours", "gallery", "store"].map((section) => (
+              {["tours", "Galeria", "Tienda"].map((section) => (
                 <a
                   key={section}
                   href={`#${section}`}
@@ -184,7 +184,7 @@ export default function HomePage() {
               size="lg"
               className="bg-transparent px-8 py-6 text-lg"
               onClick={() =>
-                document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" })
+                document.getElementById("Galeria")?.scrollIntoView({ behavior: "smooth" })
               }
             >
               Ver Galería
@@ -221,8 +221,8 @@ export default function HomePage() {
 
       <SectionDivider variant="vinyl" />
 
-      {/* Gallery Section */}
-      <section id="gallery" aria-label="Galería de Momentos" className="relative z-10 py-16 px-4 bg-card/30">
+      {/* Galeria Section */}
+      <section id="Galeria" aria-label="Galería de Momentos" className="relative z-10 py-16 px-4 bg-card/30">
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
@@ -238,8 +238,8 @@ export default function HomePage() {
 
       <SectionDivider variant="lightning" />
 
-      {/* Store Section */}
-      <section id="store" aria-label="Tienda de Merchandising" className="relative z-10 py-16 px-4">
+      {/* Tienda Section */}
+      <section id="Tienda" aria-label="Tienda de Merchandising" className="relative z-10 py-16 px-4">
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">

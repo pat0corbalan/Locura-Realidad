@@ -1,23 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useReducer, type ReactNode } from "react"
-
-interface Product {
-  id: number
-  name: string
-  description: string
-  price: number
-  originalPrice?: number
-  image: string
-  category: string
-  rating: number
-  inStock: boolean
-}
+import { Product } from "@/components/types/product"
 
 interface CartItem extends Product {
   quantity: number
+  size: string // talla seleccionada
+  id: string   // ID único en el carrito: _id + size
 }
 
 interface CartState {
@@ -27,9 +17,9 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: "ADD_ITEM"; payload: Product }
-  | { type: "REMOVE_ITEM"; payload: number }
-  | { type: "UPDATE_QUANTITY"; payload: { id: number; quantity: number } }
+  | { type: "ADD_ITEM"; payload: Product & { size: string } }
+  | { type: "REMOVE_ITEM"; payload: string } // id
+  | { type: "UPDATE_QUANTITY"; payload: { id: string; quantity: number } }
   | { type: "CLEAR_CART" }
 
 const CartContext = createContext<{
@@ -40,12 +30,23 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existingItem = state.items.find((item) => item.id === action.payload.id)
+      const incomingItem: CartItem = {
+        ...action.payload,
+        id: `${action.payload._id}-${action.payload.size}`, // ID único
+        quantity: 1,
+      }
+
+      const existingItem = state.items.find(
+        (item) => item.id === incomingItem.id
+      )
 
       if (existingItem) {
         const updatedItems = state.items.map((item) =>
-          item.id === action.payload.id ? { ...item, quantity: item.quantity + 1 } : item,
+          item.id === incomingItem.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         )
+
         return {
           ...state,
           items: updatedItems,
@@ -53,7 +54,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           itemCount: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
         }
       } else {
-        const newItems = [...state.items, { ...action.payload, quantity: 1 }]
+        const newItems = [...state.items, incomingItem]
         return {
           ...state,
           items: newItems,
@@ -79,8 +80,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
 
       const updatedItems = state.items.map((item) =>
-        item.id === action.payload.id ? { ...item, quantity: action.payload.quantity } : item,
+        item.id === action.payload.id
+          ? { ...item, quantity: action.payload.quantity }
+          : item
       )
+
       return {
         ...state,
         items: updatedItems,
