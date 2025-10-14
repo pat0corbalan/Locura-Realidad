@@ -25,6 +25,14 @@ import {
   SectionDivider,
   RockQuote,
 } from "@/components/rock-visual-elements";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tour } from "@/components/types/tour";
 import { ReservaModal } from "@/components/reserva-modal";
 
@@ -72,7 +80,7 @@ export default function HomePage() {
 
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} />
 
-      {/* ✅ Reserva Modal */}
+      {/* Reserva Modal */}
       {reservaTour && (
         <ReservaModal
           open={reservaOpen}
@@ -84,14 +92,18 @@ export default function HomePage() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/50 backdrop-blur-sm relative">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between" aria-label="Main navigation">
+          <nav
+            className="flex items-center justify-between"
+            aria-label="Main navigation"
+          >
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
                 Locura{" "}
                 <span
                   className="text-black"
                   style={{
-                    textShadow: "0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000",
+                    textShadow:
+                      "0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000",
                   }}
                 >
                   &amp;
@@ -139,7 +151,10 @@ export default function HomePage() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div id="mobile-menu" className="mt-4 flex flex-col space-y-4 md:hidden text-center">
+            <div
+              id="mobile-menu"
+              className="mt-4 flex flex-col space-y-4 md:hidden text-center"
+            >
               {["tours", "Galeria", "Tienda"].map((section) => (
                 <a
                   key={section}
@@ -167,14 +182,17 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="mx-auto mb-8 max-w-3xl text-xl md:text-2xl text-muted-foreground">
-            Vive la experiencia definitiva del rock. Tours únicos que te llevan a los lugares más legendarios de la música.
+            Vive la experiencia definitiva del rock. Tours únicos que te llevan a
+            los lugares más legendarios de la música.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row justify-center">
             <Button
               size="lg"
               className="animate-rock-glow px-8 py-6 text-lg"
               onClick={() =>
-                document.getElementById("tours")?.scrollIntoView({ behavior: "smooth" })
+                document.getElementById("tours")?.scrollIntoView({
+                  behavior: "smooth",
+                })
               }
             >
               Explorar Tours
@@ -184,7 +202,9 @@ export default function HomePage() {
               size="lg"
               className="bg-transparent px-8 py-6 text-lg"
               onClick={() =>
-                document.getElementById("Galeria")?.scrollIntoView({ behavior: "smooth" })
+                document.getElementById("Galeria")?.scrollIntoView({
+                  behavior: "smooth",
+                })
               }
             >
               Ver Galería
@@ -196,7 +216,11 @@ export default function HomePage() {
       <SectionDivider variant="guitar" />
 
       {/* Tours Section */}
-      <section id="tours" className="relative z-10 py-16 px-4" aria-label="Tours disponibles">
+      <section
+        id="tours"
+        className="relative z-49 py-16 overflow-hidden"
+        aria-label="Tours disponibles"
+      >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
@@ -206,14 +230,15 @@ export default function HomePage() {
               Descubre los destinos más rockeros del mundo
             </p>
           </header>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <TourList
-              tours={tours}
-              loading={loading}
-              error={error}
-              onReservar={handleReservarTour}
-            />
-          </div>
+          <p className="text-sm text-muted-foreground text-center mb-4 md:hidden animate-pulse">
+            Desliza para ver más tours →
+          </p>
+         <TourList
+            tours={tours}
+            loading={loading}
+            error={error}
+            onReservar={handleReservarTour}
+          />
         </div>
       </section>
 
@@ -221,8 +246,12 @@ export default function HomePage() {
 
       <SectionDivider variant="vinyl" />
 
-      {/* Galeria Section */}
-      <section id="Galeria" aria-label="Galería de Momentos" className="relative z-10 py-16 px-4 bg-card/30">
+      {/* Galería Section */}
+      <section
+        id="Galeria"
+        aria-label="Galería de Momentos"
+        className="relative z-10 py-16 px-4 bg-card/30"
+      >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
@@ -239,7 +268,11 @@ export default function HomePage() {
       <SectionDivider variant="lightning" />
 
       {/* Tienda Section */}
-      <section id="Tienda" aria-label="Tienda de Merchandising" className="relative z-10 py-16 px-4">
+      <section
+        id="Tienda"
+        aria-label="Tienda de Merchandising"
+        className="relative z-10 py-16 overflow-hidden"
+      >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
@@ -254,7 +287,10 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section aria-label="Características principales" className="relative z-10 py-16 px-4 bg-card/30">
+      <section
+        aria-label="Características principales"
+        className="relative z-10 py-16 px-4 bg-card/30"
+      >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h3 className="text-4xl font-bold text-foreground text-rock-shadow">
@@ -266,24 +302,29 @@ export default function HomePage() {
               {
                 icon: Guitar,
                 title: "Experiencias Auténticas",
-                description: "Acceso exclusivo a estudios, venues y lugares históricos del rock.",
+                description:
+                  "Acceso exclusivo a estudios, venues y lugares históricos del rock.",
               },
               {
                 icon: Users,
                 title: "Grupos Pequeños",
-                description: "Máximo 12 personas por tour para una experiencia más personal.",
+                description:
+                  "Máximo 12 personas por tour para una experiencia más personal.",
               },
               {
                 icon: Music,
                 title: "Guías Expertos",
-                description: "Músicos y expertos en rock que conocen las historias reales.",
+                description:
+                  "Músicos y expertos en rock que conocen las historias reales.",
               },
             ].map(({ icon: Icon, title, description }) => (
               <article key={title} className="text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-rock-glow">
                   <Icon className="h-8 w-8 text-primary" />
                 </div>
-                <h4 className="mb-2 text-xl font-semibold text-foreground">{title}</h4>
+                <h4 className="mb-2 text-xl font-semibold text-foreground">
+                  {title}
+                </h4>
                 <p className="text-muted-foreground">{description}</p>
               </article>
             ))}
@@ -292,16 +333,22 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer aria-label="Pie de página" className="relative z-10 border-t border-border bg-card py-12 px-6">
+      <footer
+        aria-label="Pie de página"
+        className="relative z-10 border-t border-border bg-card py-12 px-6"
+      >
         <div className="container mx-auto max-w-7xl">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
               <div className="mb-4 flex items-center space-x-3">
                 <Guitar className="h-7 w-7 text-primary" />
-                <span className="text-xl font-bold text-foreground">Locura y Realidad</span>
+                <span className="text-xl font-bold text-foreground">
+                  Locura y Realidad
+                </span>
               </div>
               <p className="max-w-xs leading-relaxed text-base text-muted-foreground">
-                Tours de rock únicos que te conectan con la historia y la pasión de la música.
+                Tours de rock únicos que te conectan con la historia y la pasión
+                de la música.
               </p>
             </div>
 
@@ -312,7 +359,10 @@ export default function HomePage() {
               </h5>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
-                  <a href="#tours" className="transition-colors hover:text-primary">
+                  <a
+                    href="#tours"
+                    className="transition-colors hover:text-primary"
+                  >
                     Argentina
                   </a>
                 </li>
@@ -331,7 +381,10 @@ export default function HomePage() {
                   { label: "Blog", href: "#" },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <a href={href} className="transition-colors hover:text-primary">
+                    <a
+                      href={href}
+                      className="transition-colors hover:text-primary"
+                    >
                       {label}
                     </a>
                   </li>
@@ -351,7 +404,11 @@ export default function HomePage() {
                   { label: "Twitter", href: "#", IconComponent: Twitter },
                 ].map(({ label, href, IconComponent }) => (
                   <li key={label}>
-                    <a href={href} aria-label={label} className="transition-colors hover:text-primary">
+                    <a
+                      href={href}
+                      aria-label={label}
+                      className="transition-colors hover:text-primary"
+                    >
                       <IconComponent className="h-6 w-6" />
                     </a>
                   </li>
