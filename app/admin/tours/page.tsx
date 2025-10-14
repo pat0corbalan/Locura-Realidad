@@ -246,11 +246,13 @@ const getNextDate = (dates: string[]): string => {
                 <SelectValue placeholder="Grupo" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {grupos.map((grupo) => (
+              {grupos
+                .filter((grupo) => grupo && grupo.trim() !== "")
+                .map((grupo) => (
                   <SelectItem key={grupo} value={grupo} className="text-popover-foreground">
                     {grupo}
                   </SelectItem>
-                ))}
+              ))}
               </SelectContent>
             </Select>
           </div>
