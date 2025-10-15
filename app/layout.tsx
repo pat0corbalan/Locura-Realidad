@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     siteName: "Locura y Realidad",
     images: [
       {
-        url: "https://locura-realidad.vercel.app/images/og-rock-tours-argentina.jpg", // Imagen OG específica Argentina
+        url: "https://res.cloudinary.com/ddfojw7jj/image/upload/v1760487472/lyr_rlu7r0.png",
         width: 1200,
         height: 630,
         alt: "Tours de Rock - Locura y Realidad Argentina",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: "Tours de Rock en Argentina | Locura y Realidad",
     description:
       "Descubre destinos legendarios del rock con nuestros tours especializados por Argentina. Vive la música como nunca antes.",
-    images: ["https://locura-realidad.vercel.app/images/twitter-rock-tours-argentina.jpg"], // Imagen Twitter Argentina
+    images: ["https://res.cloudinary.com/ddfojw7jj/image/upload/v1760487472/lyr_rlu7r0.png"], 
     site: "@tuusuario",
   },
   metadataBase: new URL("https://locura-realidad.vercel.app"),
