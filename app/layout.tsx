@@ -1,3 +1,5 @@
+// app/layout.tsx
+
 import type React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
@@ -21,8 +23,9 @@ export const metadata: Metadata = {
     "turismo musical",
     "lugares emblemáticos del rock",
     "Locura y Realidad",
-    "destinos rock Argentina"
+    "destinos rock Argentina",
   ],
+  metadataBase: new URL("https://locura-realidad.vercel.app"),
   openGraph: {
     title: "Tours de Rock en Argentina | Locura y Realidad",
     description:
@@ -35,6 +38,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: "Tours de Rock - Locura y Realidad Argentina",
+        type: "image/png",
       },
     ],
     locale: "es_AR",
@@ -45,10 +49,9 @@ export const metadata: Metadata = {
     title: "Tours de Rock en Argentina | Locura y Realidad",
     description:
       "Descubre destinos legendarios del rock con nuestros tours especializados por Argentina. Vive la música como nunca antes.",
-    images: ["https://res.cloudinary.com/ddfojw7jj/image/upload/v1760487472/lyr_rlu7r0.png"], 
-    site: "@tuusuario",
+    images: "https://res.cloudinary.com/ddfojw7jj/image/upload/v1760487472/lyr_rlu7r0.png",
+    site: "@tuusuario", // Cambiá esto por tu usuario real de Twitter si querés
   },
-  metadataBase: new URL("https://locura-realidad.vercel.app"),
 };
 
 export default function RootLayout({
@@ -60,16 +63,13 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:image" content="https://res.cloudinary.com/ddfojw7jj/image/upload/v1760487472/lyr_rlu7r0.png" />
 
-        {/* Favicon */}
+        {/* Favicons y manifest */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-
-        {/* Android Chrome */}
         <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
       </head>
