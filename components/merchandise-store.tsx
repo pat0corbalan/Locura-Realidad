@@ -18,8 +18,8 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { Skeleton } from "@/components/ui/skeleton"; // 👈 Asegurate de importar Skeleton
-
+import { Skeleton } from "@/components/ui/skeleton"; 
+import {optimizeCloudinaryImage} from "@/utils/optimizeCloudinary"
 interface Product {
   _id: string;
   name: string;
@@ -127,7 +127,7 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                       {/* Imagen + Etiquetas */}
                       <div className="relative overflow-hidden rounded-t-lg">
                         <img
-                          src={product.image || "/placeholder.svg"}
+                          src={optimizeCloudinaryImage(product.image)}
                           alt={product.name}
                           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                         />

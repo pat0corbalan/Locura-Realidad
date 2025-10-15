@@ -8,7 +8,7 @@ cloudinary.config({
 
 export async function POST(req) {
   const data = await req.formData();
-  const file = data.get('file'); // nombre del campo enviado
+  const file = data.get('file');
 
   if (!file) {
     return new Response(JSON.stringify({ error: 'No se envió archivo' }), { status: 400 });
@@ -19,10 +19,20 @@ export async function POST(req) {
 
   try {
     const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream({ folder: 'LocuraRealidad' }, (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }).end(buffer);
+      cloudinary.uploader.upload_stream(
+        {
+          folder: 'LocuraRealidad',
+          quality: 'auto',
+          fetch_format: 'auto', // puedes usar también format: 'auto'
+          transformation: [
+            { width: 1200, crop: 'limit' } // evita imágenes enormes
+          ]
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      ).end(buffer);
     });
 
     return Response.json({ url: result.secure_url });

@@ -25,14 +25,6 @@ import {
   SectionDivider,
   RockQuote,
 } from "@/components/rock-visual-elements";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tour } from "@/components/types/tour";
 import { ReservaModal } from "@/components/reserva-modal";
 
@@ -78,9 +70,27 @@ export default function HomePage() {
       <FloatingRockIcons />
       <RockPatternBackground />
 
+      {/* Datos estructurados para SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TouristTrip",
+            name: "Tours de Rock - Locura y Realidad",
+            description:
+              "Tours únicos que recorren los lugares más emblemáticos del rock.",
+            provider: {
+              "@type": "Organization",
+              name: "Locura y Realidad",
+              url: "https://tudominio.com",
+            },
+          }),
+        }}
+      />
+
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} />
 
-      {/* Reserva Modal */}
       {reservaTour && (
         <ReservaModal
           open={reservaOpen}
@@ -89,12 +99,11 @@ export default function HomePage() {
         />
       )}
 
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/50 backdrop-blur-sm relative">
         <div className="container mx-auto px-4 py-4">
           <nav
             className="flex items-center justify-between"
-            aria-label="Main navigation"
+            aria-label="Navegación principal"
           >
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
@@ -112,7 +121,6 @@ export default function HomePage() {
               </h1>
             </div>
 
-            {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-6">
               {["tours", "Galeria", "Tienda"].map((section) => (
                 <a
@@ -130,7 +138,6 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Mobile */}
             <div className="flex items-center space-x-4 md:hidden">
               <ShoppingCartButton
                 open={cartOpen}
@@ -149,7 +156,6 @@ export default function HomePage() {
             </div>
           </nav>
 
-          {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div
               id="mobile-menu"
@@ -170,7 +176,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative py-40 px-4 text-center z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
         <div className="container mx-auto relative z-10">
@@ -182,8 +187,8 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="mx-auto mb-8 max-w-3xl text-xl md:text-2xl text-muted-foreground">
-            Vive la experiencia definitiva del rock. Tours únicos que te llevan a
-            los lugares más legendarios de la música.
+            Vive la experiencia definitiva del rock. Tours únicos que te llevan a los
+            lugares más legendarios de la música.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row justify-center">
             <Button
@@ -215,17 +220,17 @@ export default function HomePage() {
 
       <SectionDivider variant="guitar" />
 
-      {/* Tours Section */}
       <section
         id="tours"
-        className="relative z-49 py-16 overflow-hidden"
+        role="region"
         aria-label="Tours disponibles"
+        className="relative z-49 py-16 overflow-hidden"
       >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
-            <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
               Tours Disponibles
-            </h3>
+            </h2>
             <p className="text-xl text-muted-foreground">
               Descubre los destinos más rockeros del mundo
             </p>
@@ -233,7 +238,7 @@ export default function HomePage() {
           <p className="text-sm text-muted-foreground text-center mb-4 md:hidden animate-pulse">
             Desliza para ver más tours →
           </p>
-         <TourList
+          <TourList
             tours={tours}
             loading={loading}
             error={error}
@@ -246,17 +251,17 @@ export default function HomePage() {
 
       <SectionDivider variant="vinyl" />
 
-      {/* Galería Section */}
       <section
         id="Galeria"
+        role="region"
         aria-label="Galería de Momentos"
         className="relative z-10 py-16 px-4 bg-card/30"
       >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
-            <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
               Galería de Momentos
-            </h3>
+            </h2>
             <p className="text-xl text-muted-foreground">
               Revive las experiencias más increíbles de nuestros tours
             </p>
@@ -267,17 +272,17 @@ export default function HomePage() {
 
       <SectionDivider variant="lightning" />
 
-      {/* Tienda Section */}
       <section
         id="Tienda"
+        role="region"
         aria-label="Tienda de Merchandising"
         className="relative z-10 py-16 overflow-hidden"
       >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
-            <h3 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
               Tienda de Merchandising
-            </h3>
+            </h2>
             <p className="text-xl text-muted-foreground">
               Lleva contigo el espíritu del rock con nuestros productos exclusivos
             </p>
@@ -286,16 +291,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
       <section
+        role="region"
         aria-label="Características principales"
         className="relative z-10 py-16 px-4 bg-card/30"
       >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
-            <h3 className="text-4xl font-bold text-foreground text-rock-shadow">
+            <h2 className="text-4xl font-bold text-foreground text-rock-shadow">
               ¿Por qué Locura y Realidad?
-            </h3>
+            </h2>
           </header>
           <div className="grid gap-8 md:grid-cols-3">
             {[
@@ -322,9 +327,9 @@ export default function HomePage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-rock-glow">
                   <Icon className="h-8 w-8 text-primary" />
                 </div>
-                <h4 className="mb-2 text-xl font-semibold text-foreground">
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
                   {title}
-                </h4>
+                </h3>
                 <p className="text-muted-foreground">{description}</p>
               </article>
             ))}
@@ -332,8 +337,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer
+        role="contentinfo"
         aria-label="Pie de página"
         className="relative z-10 border-t border-border bg-card py-12 px-6"
       >
@@ -353,10 +358,10 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h5 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
+              <h4 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
                 <MapPin className="h-5 w-5 text-primary" />
                 <span>Tours</span>
-              </h5>
+              </h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <a
@@ -370,15 +375,15 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h5 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
+              <h4 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
                 <Users className="h-5 w-5 text-primary" />
                 <span>Empresa</span>
-              </h5>
+              </h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 {[
-                  { label: "Sobre Nosotros", href: "#" },
-                  { label: "Contacto", href: "#" },
-                  { label: "Blog", href: "#" },
+                  { label: "Sobre Nosotros", href: "/nosotros" },
+                  { label: "Contacto", href: "/contacto" },
+                  { label: "Blog", href: "/blog" },
                 ].map(({ label, href }) => (
                   <li key={label}>
                     <a
@@ -393,10 +398,10 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h5 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
+              <h4 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
                 <Newspaper className="h-5 w-5 text-primary" />
                 <span>Síguenos</span>
-              </h5>
+              </h4>
               <ul className="flex space-x-6 text-muted-foreground">
                 {[
                   { label: "Instagram", href: "#", IconComponent: Instagram },
