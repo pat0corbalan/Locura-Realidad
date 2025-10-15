@@ -123,8 +123,8 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-card-foreground">{stat.value}</div>
               <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 text-accent" />
-                <span className="text-accent">{stat.trend}</span>
+                <TrendingUp className="h-3 w-3 text-primary" />
+                <span className="text-primary">{stat.trend}</span>
                 <span>{stat.description}</span>
               </div>
             </CardContent>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               {recentActivity.map((activity, index) => (
                 <div key={index} className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-accent rounded-full" />
+                  <div className="w-2 h-2 bg-primary rounded-full" />
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium text-card-foreground">{activity.action}</p>
                     <p className="text-xs text-muted-foreground">{activity.item}</p>

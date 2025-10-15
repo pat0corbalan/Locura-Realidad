@@ -34,7 +34,7 @@
   --sidebar-foreground: oklch(1 0 0); /* White sidebar text */
   --sidebar-primary: oklch(0.55 0.22 25); /* Red sidebar primary */
   --sidebar-primary-foreground: oklch(1 0 0); /* White text on sidebar primary */
-  --sidebar-accent: oklch(0.65 0.15 85); /* Golden yellow sidebar accent */
+  --sidebar-accent: oklch(0.55 0.22 25); /* Golden yellow sidebar accent */
   --sidebar-accent-foreground: oklch(0 0 0); /* Black text on sidebar accent */
   --sidebar-border: oklch(0.3 0 0); /* Dark grey sidebar border */
   --sidebar-ring: oklch(0.55 0.22 25); /* Red sidebar focus ring */

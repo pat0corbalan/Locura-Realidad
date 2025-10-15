@@ -105,7 +105,7 @@ export function RockQuote() {
         <div className="relative">
           <div className="absolute -top-4 -left-4 text-6xl text-primary/20 font-bold">"</div>
           <blockquote className="text-2xl md:text-3xl font-bold text-foreground italic mb-4">
-            El rock no es solo música, es una forma de vida que conecta almas rebeldes alrededor del mundo
+            El rock no es solo música, es una forma de vida que nos conecta con personas en cada viaje al rededor del país.
           </blockquote>
           <div className="absolute -bottom-4 -right-4 text-6xl text-primary/20 font-bold">"</div>
         </div>

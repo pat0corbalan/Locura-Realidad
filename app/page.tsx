@@ -79,11 +79,11 @@ export default function HomePage() {
             "@type": "TouristTrip",
             name: "Tours de Rock - Locura y Realidad",
             description:
-              "Tours únicos que recorren los lugares más emblemáticos del rock.",
+              "Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.",
             provider: {
               "@type": "Organization",
               name: "Locura y Realidad",
-              url: "https://tudominio.com",
+              url: "https://locura-realidad.vercel.app/",
             },
           }),
         }}
@@ -187,8 +187,7 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="mx-auto mb-8 max-w-3xl text-xl md:text-2xl text-muted-foreground">
-            Vive la experiencia definitiva del rock. Tours únicos que te llevan a los
-            lugares más legendarios de la música.
+            Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row justify-center">
             <Button
@@ -200,7 +199,7 @@ export default function HomePage() {
                 })
               }
             >
-              Explorar Tours
+              Próximos Destinos
             </Button>
             <Button
               variant="outline"
@@ -229,10 +228,10 @@ export default function HomePage() {
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
-              Tours Disponibles
+              Viajes Disponibles
             </h2>
             <p className="text-xl text-muted-foreground">
-              Descubre los destinos más rockeros del mundo
+              Traslados ida y vuelta (entrada opcional)
             </p>
           </header>
           <p className="text-sm text-muted-foreground text-center mb-4 md:hidden animate-pulse">
@@ -263,7 +262,7 @@ export default function HomePage() {
               Galería de Momentos
             </h2>
             <p className="text-xl text-muted-foreground">
-              Revive las experiencias más increíbles de nuestros tours
+              Reviví algunos viajes y eventos de los últimos años
             </p>
           </header>
           <PhotoGallery />
@@ -284,7 +283,7 @@ export default function HomePage() {
               Tienda de Merchandising
             </h2>
             <p className="text-xl text-muted-foreground">
-              Lleva contigo el espíritu del rock con nuestros productos exclusivos
+              Lleva con vos una remera que te identifique en cada viaje. Elegí tu diseño y tu banda. ¿Crees que falta alguna? Comunícate con nosotros y déjanos tu pedido.
             </p>
           </header>
           <CartPageContent />
@@ -306,9 +305,9 @@ export default function HomePage() {
             {[
               {
                 icon: Guitar,
-                title: "Experiencias Auténticas",
+                title: "Más de 3 años viajando a recitales.",
                 description:
-                  "Acceso exclusivo a estudios, venues y lugares históricos del rock.",
+                  "La música y vos nos permiten seguir estando presentes.  El rock nos une, te esperamos en los próximos destinos.",
               },
               {
                 icon: Users,
@@ -404,9 +403,9 @@ export default function HomePage() {
               </h4>
               <ul className="flex space-x-6 text-muted-foreground">
                 {[
-                  { label: "Instagram", href: "#", IconComponent: Instagram },
-                  { label: "Facebook", href: "#", IconComponent: Facebook },
-                  { label: "Twitter", href: "#", IconComponent: Twitter },
+                  { label: "Instagram", href: "https://www.instagram.com/locurayrealidad.tour/", IconComponent: Instagram },
+                  { label: "Facebook", href: "https://www.facebook.com/Locurayrealidad.tour", IconComponent: Facebook },
+                  { label: "Twitter", href: "https://x.com/LyR_Tour", IconComponent: Twitter },
                 ].map(({ label, href, IconComponent }) => (
                   <li key={label}>
                     <a

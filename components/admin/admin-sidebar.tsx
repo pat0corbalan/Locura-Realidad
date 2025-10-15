@@ -58,13 +58,28 @@ export function AdminSidebar() {
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-6 border-b border-sidebar-border">
-            <h1 className="text-xl font-bold text-sidebar-foreground">
-              <span className="text-sidebar-accent">Locura</span> & Realidad
-            </h1>
-          </div>
+        <div className="container mx-auto px-4 py-4">
+                  <nav
+                    className="flex items-center justify-between"
+                    aria-label="Navegación principal"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
+                        Locura{" "}
+                        <span
+                          className="text-black"
+                          style={{
+                            textShadow:
+                              "0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000",
+                          }}
+                        >
+                          &amp;
+                        </span>{" "}
+                        Realidad
+                      </h1>
+                    </div>
+                  </nav>
+                
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
@@ -77,8 +92,8 @@ export function AdminSidebar() {
                   className={cn(
                     "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/10 hover:text-sidebar-accent",
+                      ? "bg-primary text-primary-foreground"
+                      : "text-primary-foreground hover:bg-primary/10 hover:text-primary",
                   )}
                   onClick={() => setIsOpen(false)}
                 >
