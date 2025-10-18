@@ -10,7 +10,7 @@ import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tours de Rock en Argentina | Vive la Historia del Rock con Locura y Realidad",
+  title: "Locura y Realidad Tour | Tours de Rock en Argentina",
   description:
     "Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.",
   generator: "Next.js + Pat0Corbalan",

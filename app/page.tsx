@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Calendar,
   MapPin,
   Users,
   Guitar,
@@ -12,11 +11,10 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  Bus,
   Menu,
   BusIcon,
-  IdCard,
   CreditCard,
+  Handshake,
 } from "lucide-react";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { ShoppingCartButton } from "@/components/shopping-cart";
@@ -308,10 +306,10 @@ export default function HomePage() {
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                icon: Guitar,
-                title: "Más de 3 años viajando a recitales.",
+                icon: Handshake,
+                title: "Contacto directo con nosotros.",
                 description:
-                  "La música y vos nos permiten seguir estando presentes.  El rock nos une, te esperamos en los próximos destinos.",
+                  "Nos podes contactar a través de nuestras redes o nuestros números personales para una mejor atención.",
               },
               {
                 icon: BusIcon,
