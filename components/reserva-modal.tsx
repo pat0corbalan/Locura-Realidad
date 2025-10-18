@@ -33,7 +33,7 @@ export function ReservaModal({ open, onOpenChange, tour }: ReservaModalProps) {
 
     Quedo atento/a a la confirmación. ¡Muchas gracias!
     `
-    const url = `https://wa.me/543856128340?text=${encodeURIComponent(mensaje)}`
+    const url = `https://wa.me/543855227041?text=${encodeURIComponent(mensaje)}`
     window.open(url, "_blank")
     }
 
