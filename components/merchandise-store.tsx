@@ -133,8 +133,8 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                         />
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                           {product.originalPrice && (
-                            <Badge variant="destructive" className="bg-primary text-primary-foreground">
-                              OFERTA
+                            <Badge className="bg-green-600 text-white">
+                              En Stock
                             </Badge>
                           )}
                           {!product.inStock && (
