@@ -382,9 +382,7 @@ export default function HomePage() {
               </h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 {[
-                  { label: "Sobre Nosotros", href: "/nosotros" },
-                  { label: "Contacto", href: "/contacto" },
-                  { label: "Blog", href: "/blog" },
+                  { label: "Contacto", href: "http://wa.me/543855227041" },
                 ].map(({ label, href }) => (
                   <li key={label}>
                     <a
