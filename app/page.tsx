@@ -183,7 +183,8 @@ export default function HomePage() {
         <div className="container mx-auto relative z-10">
           <div className="flex items-center justify-center mb-6">
             <Music className="h-12 w-12 text-primary mr-4 animate-pulse" />
-            <h2 className="text-5xl md:text-7xl font-bold text-foreground text-neon-glow">
+            <h2 className="text-5xl md:text-8xl font-bold text-foreground text-neon-glow" style={{ fontFamily: "var(--font-londrina)" }}>
+            {/* <h2 className="font-londrina text-5xl md:text-7xl font-bold text-foreground text-neon-glow" > */}
               LOCURA <span className="text-black neon-red-border">&amp;</span>{" "}
               <span className="text-primary">REALIDAD</span>
             </h2>

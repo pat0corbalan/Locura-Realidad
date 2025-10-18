@@ -8,6 +8,43 @@ import { Analytics } from "@vercel/analytics/next";
 import { CartProvider } from "@/contexts/cart-context";
 import { Suspense } from "react";
 import "./globals.css";
+import { Londrina_Shadow } from 'next/font/google';
+
+import localFont from 'next/font/local';
+import { Weight } from "lucide-react";
+
+const bbhSans = localFont({
+  src: [
+    {
+      path: '../public/fonts/bbh/BBHSansBogle-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-bbh',
+});
+
+const bungee = localFont({
+  src: [
+    {
+      path: '../public/fonts/bungee/BungeeTint-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-bungee',
+});
+
+const londrina = localFont({
+  src: [
+    {
+      path: '../public/fonts/londrina/LondrinaShadow-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-londrina',
+});
 
 export const metadata: Metadata = {
   title: "Locura y Realidad Tour | Tours de Rock en Argentina",
@@ -61,7 +98,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${bbhSans.variable} ${bungee.variable} ${londrina.variable}`}
+    >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="google-site-verification" content="Un_QoY66hLuiFGOySM37Zh6VrnHqyyqAR53KZ3zpXN4" />
