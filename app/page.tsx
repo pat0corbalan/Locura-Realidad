@@ -353,8 +353,7 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="max-w-xs leading-relaxed text-base text-muted-foreground">
-                Tours de rock únicos que te conectan con la historia y la pasión
-                de la música.
+                Desde el 23 de marzo del 2022.
               </p>
             </div>
 
