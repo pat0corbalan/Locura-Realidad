@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { X, ChevronLeft, ChevronRight } from "lucide-react"
+import { X } from "lucide-react"
 import {
   Carousel,
   CarouselContent,
@@ -26,15 +26,16 @@ export function PhotoGallery() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null)
-  const [itemsPerSlide, setItemsPerSlide] = useState(6) // default escritorio
+  const [itemsPerSlide, setItemsPerSlide] = useState(6) // escritorio por defecto
 
+  // Responsivo: ajusta cuántas fotos por slide
   useEffect(() => {
     const updateItemsPerSlide = () => {
       const width = window.innerWidth
       if (width < 640) {
         setItemsPerSlide(1) // móvil
       } else {
-        setItemsPerSlide(6) // desktop
+        setItemsPerSlide(6) // escritorio
       }
     }
 
@@ -43,6 +44,7 @@ export function PhotoGallery() {
     return () => window.removeEventListener("resize", updateItemsPerSlide)
   }, [])
 
+  // Cargar fotos desde API
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -55,9 +57,11 @@ export function PhotoGallery() {
         setLoading(false)
       }
     }
+
     fetchPhotos()
   }, [])
 
+  // Bloquear scroll al abrir modal
   useEffect(() => {
     if (selectedPhotoIndex !== null) {
       document.body.style.overflow = "hidden"
@@ -84,23 +88,6 @@ export function PhotoGallery() {
 
   const photoGroups = groupPhotos(displayedPhotos, itemsPerSlide)
 
-  const selectedPhoto = selectedPhotoIndex !== null ? photos[selectedPhotoIndex] : null
-
-  // Funciones para navegar en el modal
-  const goPrev = () => {
-    if (selectedPhotoIndex === null) return
-    setSelectedPhotoIndex((prevIndex) =>
-      prevIndex === 0 ? photos.length - 1 : (prevIndex ?? 0) - 1
-    )
-  }
-
-  const goNext = () => {
-    if (selectedPhotoIndex === null) return
-    setSelectedPhotoIndex((prevIndex) =>
-      prevIndex === photos.length - 1 ? 0 : (prevIndex ?? 0) + 1
-    )
-  }
-
   return (
     <>
       <div className="mb-4">
@@ -109,6 +96,7 @@ export function PhotoGallery() {
         </p>
       </div>
 
+      {/* Galería principal */}
       <Carousel className="w-full cursor-grab active:cursor-grabbing">
         <CarouselContent>
           {photoGroups.map((group, index) => (
@@ -125,11 +113,16 @@ export function PhotoGallery() {
                     <Card
                       key={photo._id}
                       className="group cursor-pointer overflow-hidden bg-card border-border hover:border-primary/50 transition-all duration-300"
-                      onClick={() => setSelectedPhotoIndex(index * itemsPerSlide + idx)}
+                      onClick={() =>
+                        setSelectedPhotoIndex(index * itemsPerSlide + idx)
+                      }
                     >
                       <div className="relative overflow-hidden">
                         <img
-                          src={optimizeCloudinaryImage(photo.src, { width: 600 }) || "/placeholder.svg"}
+                          src={
+                            optimizeCloudinaryImage(photo.src, { width: 600 }) ||
+                            "/placeholder.svg"
+                          }
                           alt={photo.alt}
                           className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                           loading="lazy"
@@ -164,20 +157,10 @@ export function PhotoGallery() {
         <CarouselNext />
       </Carousel>
 
-      {/* Modal */}
-      {selectedPhoto && (
+      {/* Modal fullscreen con swipe */}
+      {selectedPhotoIndex !== null && (
         <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4">
-          <div className="relative max-w-4xl max-h-full flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 left-4 z-10 bg-black/50 hover:bg-black/70 text-white"
-              onClick={goPrev}
-              aria-label="Foto anterior"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-
+          <div className="relative w-full max-w-5xl">
             <Button
               variant="ghost"
               size="icon"
@@ -188,29 +171,55 @@ export function PhotoGallery() {
               <X className="h-6 w-6" />
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-14 z-10 bg-black/50 hover:bg-black/70 text-white"
-              onClick={goNext}
-              aria-label="Foto siguiente"
+            <Carousel
+              className="w-full"
+              opts={{
+                startIndex: selectedPhotoIndex,
+                loop: true,
+              }}
+              setApi={(api) => {
+                if (!api) return
+                api.on("select", () => {
+                  const idx = api.selectedScrollSnap()
+                  setSelectedPhotoIndex(idx)
+                })
+              }}
             >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
+              <CarouselContent>
+                {photos.map((photo) => (
+                  <CarouselItem
+                    key={photo._id}
+                    className="flex justify-center items-center"
+                  >
+                    <div className="flex flex-col items-center max-w-full max-h-[80vh]">
+                      <img
+                        src={
+                          optimizeCloudinaryImage(photo.src, { width: 1200 }) ||
+                          "/placeholder.svg"
+                        }
+                        alt={photo.alt}
+                        className="max-w-full max-h-[80vh] object-contain"
+                      />
+                      <div className="text-center mt-4">
+                        <h3 className="text-white text-2xl font-bold">
+                          {photo.title}
+                        </h3>
+                        <p className="text-white/80 text-lg">
+                          {photo.location}
+                        </p>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
 
-            <img
-              src={optimizeCloudinaryImage(selectedPhoto.src, { width: 1200 }) || "/placeholder.svg"}
-              alt={selectedPhoto.alt}
-              className="max-w-full max-h-[80vh] object-contain mx-auto"
-              loading="lazy"
-            />
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-center">
-            <h3 className="text-white text-2xl font-bold mb-2">
-              {selectedPhoto.title}
-            </h3>
-            <p className="text-white/80 text-lg">{selectedPhoto.location}</p>
+              <CarouselPrevious
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white"
+              />
+              <CarouselNext
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white"
+              />
+            </Carousel>
           </div>
         </div>
       )}

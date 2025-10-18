@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     "Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.",
   generator: "Next.js + Pat0Corbalan",
   keywords: [
+    "locura y realidad tour",
     "tours de rock",
     "viajes musicales",
     "rock nacional",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tours de Rock en Argentina | Locura y Realidad",
     description:
-      "Viajes únicos para fans del rock: conoce los sitios más emblemáticos y culturales de la historia del rock nacional e internacional en Argentina.",
+      "Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.",
     url: "https://locura-realidad.vercel.app",
     siteName: "Locura y Realidad",
     images: [
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Tours de Rock en Argentina | Locura y Realidad",
     description:
-      "Descubre destinos legendarios del rock con nuestros tours especializados por Argentina. Vive la música como nunca antes.",
+      "Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.",
     images: "https://locura-realidad.vercel.app/lyr.png",
     site: "@LyR_Tour", 
   },
@@ -63,6 +64,7 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="google-site-verification" content="Un_QoY66hLuiFGOySM37Zh6VrnHqyyqAR53KZ3zpXN4" />
 
         {/* Favicons y manifest */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

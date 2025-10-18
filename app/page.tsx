@@ -12,7 +12,11 @@ import {
   Instagram,
   Facebook,
   Twitter,
+  Bus,
   Menu,
+  BusIcon,
+  IdCard,
+  CreditCard,
 } from "lucide-react";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { ShoppingCartButton } from "@/components/shopping-cart";
@@ -106,7 +110,7 @@ export default function HomePage() {
             aria-label="Navegación principal"
           >
             <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
+              <h1 className="text-2xl font-bold text-foreground text-rock-shadow" style={{ fontFamily: "var(--font-bbh)" }}>
                 Locura{" "}
                 <span
                   className="text-black"
@@ -187,7 +191,7 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="mx-auto mb-8 max-w-3xl text-xl md:text-2xl text-muted-foreground">
-            Logística en viajes con destino a recitales desde Santiago Del Estero, capital. Organización de eventos locales y venta de indumentaria dirigida al público de rock.
+            Viajes a recitales desde Santiago del Estero.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row justify-center">
             <Button
@@ -280,7 +284,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
-              Tienda de Merchandising
+              Tienda
             </h2>
             <p className="text-xl text-muted-foreground">
               Lleva con vos una remera que te identifique en cada viaje. Elegí tu diseño y tu banda. ¿Crees que falta alguna? Comunícate con nosotros y déjanos tu pedido.
@@ -310,16 +314,16 @@ export default function HomePage() {
                   "La música y vos nos permiten seguir estando presentes.  El rock nos une, te esperamos en los próximos destinos.",
               },
               {
-                icon: Users,
-                title: "Grupos Pequeños",
+                icon: BusIcon,
+                title: "Viajes durante todo el año",
                 description:
-                  "Máximo 12 personas por tour para una experiencia más personal.",
+                  "Todos los meses podes encontrar fechas disponibles para reservas.",
               },
               {
-                icon: Music,
-                title: "Guías Expertos",
+                icon: CreditCard,
+                title: "Facilidad a la hora de pagar tu viaje o hacer una compra",
                 description:
-                  "Músicos y expertos en rock que conocen las historias reales.",
+                  "Aceptamos todos los medios de pagos. 10% de descuento si abonas en transferencia.",
               },
             ].map(({ icon: Icon, title, description }) => (
               <article key={title} className="text-center">

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Bogle&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -177,4 +178,11 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+
+.font-bbh {
+  font-family: "BBH Sans Bogle";
+  font-weight: 400;
+  font-style: normal;
 }
