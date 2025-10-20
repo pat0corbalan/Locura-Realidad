@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { Card, CardContent } from "./ui/card"
+import { optimizeCloudinaryImage } from "@/utils/optimizeCloudinary"
 
 interface ShoppingCartButtonProps {
   open: boolean
@@ -15,9 +16,7 @@ export function ShoppingCartButton({ open, onOpenChange, onCheckout }: ShoppingC
   const { state, dispatch } = useCart()
 
   const handleProceedToCheckout = () => {
-    // Cierra el carrito
     onOpenChange(false)
-    // Abre el modal de checkout
     onCheckout()
   }
 
@@ -60,11 +59,11 @@ export function ShoppingCartButton({ open, onOpenChange, onCheckout }: ShoppingC
 function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () => void }) {
   const { state, dispatch } = useCart()
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } })
   }
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     dispatch({ type: "REMOVE_ITEM", payload: id })
   }
 
@@ -91,7 +90,16 @@ function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () 
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <img
-                    src={item.image || "/placeholder.svg"}
+                    src={
+                      item.image
+                        ? optimizeCloudinaryImage(item.image, {
+                            width: 200,
+                            quality: "auto:eco",
+                            crop: "fill",
+                            format: "webp",
+                          })
+                        : "/placeholder.svg"
+                    }
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded-md"
                   />
@@ -107,7 +115,7 @@ function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () 
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 bg-transparent"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(String(item.id), item.quantity - 1)}
                           disabled={item.quantity <= 1}
                         >
                           <Minus className="h-3 w-3" />
@@ -119,7 +127,7 @@ function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () 
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 bg-transparent"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(String(item.id), item.quantity + 1)}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -128,7 +136,7 @@ function ShoppingCartContent({ onProceedToCheckout }: { onProceedToCheckout: () 
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(String(item.id))}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>

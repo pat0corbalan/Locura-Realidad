@@ -122,8 +122,17 @@ export function TourList({ tours, loading, error, onReservar }: TourListProps) {
               <article className="h-full" aria-labelledby={`tour-title-${tour._id}`} aria-describedby={`tour-desc-${tour._id}`}>
                 <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 group relative z-10 h-full">
                   <div className="relative overflow-hidden rounded-t-lg">
-                    <img
-                      src={tour.image ? optimizeCloudinaryImage(tour.image) : "/placeholder.svg"}
+                   <img
+                      src={
+                        tour.image
+                          ? optimizeCloudinaryImage(tour.image, {
+                              width: 600, 
+                              quality: "auto:eco",
+                              crop: "fill",
+                              format: "webp",
+                            })
+                          : "/placeholder.svg"
+                      }
                       alt={tour.image ? `Imagen del tour ${tour.title}` : "Imagen no disponible"}
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"

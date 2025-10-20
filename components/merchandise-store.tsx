@@ -127,7 +127,13 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                       {/* Imagen + Etiquetas */}
                       <div className="relative overflow-hidden rounded-t-lg">
                         <img
-                          src={optimizeCloudinaryImage(product.image)}
+                          loading="lazy"
+                          src={optimizeCloudinaryImage(product.image, {
+                            width: 800,         // o el ancho real del contenedor
+                            quality: "auto:good",
+                            crop: "scale",
+                            format: "auto",     // deja que Cloudinary elija mejor formato (webp/avif)
+                          })}
                           alt={product.name}
                           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                         />

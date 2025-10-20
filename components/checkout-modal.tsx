@@ -25,7 +25,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [nombre, setNombre] = React.useState("")
   const [apellido, setApellido] = React.useState("")
   const [pago, setPago] = React.useState("Efectivo")
-  const [retira, setRetira] = React.useState("Retirar en local")
+  const [retira, setRetira] = React.useState("Coordinar entrega")
   const [direccionEnvio, setDireccionEnvio] = React.useState("")
   const [aclaracion, setAclaracion] = React.useState("")
 
@@ -43,8 +43,8 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
 👤 Nombre y Apellido: ${nombre} ${apellido}
 💳 Método de pago: ${pago}
-📦 Retiro o envío: ${retira}
-${retira === "Envío a domicilio" ? `🏠 Dirección de envío: ${direccionEnvio}` : ""}
+📦 Entrega o envío: ${retira}
+${retira === "Coordinar envio" ? `🏠 Dirección de entrega: ${direccionEnvio}` : ""}
 
 🛍️ Productos:
 ${productosTexto}
@@ -107,7 +107,7 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
 
           {/* Envío o retiro */}
           <label className="relative">
-            {retira === "Retirar en local" ? (
+            {retira === "Coordinar entrega" ? (
               <Package className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             ) : (
               <Truck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -117,13 +117,13 @@ Quedo atento/a a la confirmación. ¡Muchas gracias!
               onChange={(e) => setRetira(e.target.value)}
               className="border border-gray-300 rounded-lg px-10 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition w-full"
             >
-              <option value="Retirar en local">Retirar en local</option>
-              <option value="Envío a domicilio">Envío a domicilio</option>
+              <option value="Coordinar entrega">Coordinar entrega</option>
+              <option value="Coordinar envio">Coordinar envio</option>
             </select>
           </label>
 
           {/* Dirección de envío (condicional) */}
-          {retira === "Envío a domicilio" && (
+          {retira === "Coordinar envio" && (
             <label className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
