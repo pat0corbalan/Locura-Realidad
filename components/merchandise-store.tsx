@@ -132,7 +132,7 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                             width: 800,         // o el ancho real del contenedor
                             quality: "auto:good",
                             crop: "scale",
-                            format: "auto",     // deja que Cloudinary elija mejor formato (webp/avif)
+                            format: "auto",     
                           })}
                           alt={product.name}
                           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
@@ -180,11 +180,11 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                           <span className="text-2xl font-bold text-foreground">
                             ${product.price}
                           </span>
-                          {product.originalPrice && (
+                          {/* {product.originalPrice && (
                             <span className="text-sm text-muted-foreground line-through">
                               ${product.originalPrice}
                             </span>
-                          )}
+                          )} */}
                         </div>
 
                         {/* Tallas */}

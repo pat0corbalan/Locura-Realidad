@@ -21,6 +21,7 @@ import { ShoppingCartButton } from "@/components/shopping-cart";
 import { CheckoutModal } from "@/components/checkout-modal";
 import { CartPageContent } from "@/components/cart-page-content";
 import { TourList } from "@/components/tour-list";
+import { SpotifyWidget } from "@/components/spotify-widget";
 import {
   FloatingRockIcons,
   RockPatternBackground,
@@ -219,7 +220,14 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+    <SpotifyWidget 
+  playlistId="2ZFNwdOcz8zLKz0R4xZKUS" 
+  position="right" 
+  theme={0} 
+/>
 
+
+      
       <SectionDivider variant="guitar" />
 
       <section
