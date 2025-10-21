@@ -309,7 +309,7 @@ export default function HomePage() {
         <div className="container mx-auto">
           <header className="mb-12 text-center">
             <h2 className="text-4xl font-bold text-foreground text-rock-shadow">
-              ¿Por qué Locura y Realidad?
+              Contactanos
             </h2>
           </header>
           <div className="grid gap-8 md:grid-cols-3">
