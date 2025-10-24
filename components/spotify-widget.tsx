@@ -46,11 +46,12 @@ export const SpotifyWidget = ({
         >
           {isOpen ? (
             <>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center justify-between w-full">
                 <Music className="w-5 h-5" />
-                <span className="text-xs font-medium leading-none">Ocultar</span>
+                <div className='flex items-center'>
+                <X className="w-5 h-5" />
+                </div>
               </div>
-              <X className="w-5 h-5" />
             </>
           ) : (
             <Music className="w-6 h-6 animate-pulse leading-none inline-block" />

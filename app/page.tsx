@@ -318,19 +318,19 @@ export default function HomePage() {
                 icon: Handshake,
                 title: "Contacto directo con nosotros.",
                 description:
-                  "Nos podes contactar a través de nuestras redes o nuestros números personales para una mejor atención.",
+                  "Nos podes contactar a través de nuestras redes o nuestros números personales para una mejor atención",
               },
               {
                 icon: BusIcon,
                 title: "Viajes durante todo el año",
                 description:
-                  "Todos los meses podes encontrar fechas disponibles para reservas.",
+                  "Todos los meses podes encontrar fechas disponibles para reservas",
               },
               {
                 icon: CreditCard,
                 title: "Facilidad a la hora de pagar tu viaje o hacer una compra",
                 description:
-                  "Aceptamos todos los medios de pagos. 10% de descuento si abonas en transferencia.",
+                  "Aceptamos todos los medios de pagos. 10% de descuento si abonas en transferencia",
               },
             ].map(({ icon: Icon, title, description }) => (
               <article key={title} className="text-center">
