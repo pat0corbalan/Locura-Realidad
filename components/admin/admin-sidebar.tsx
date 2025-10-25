@@ -28,11 +28,11 @@ const navigation = [
     href: "/admin/tours",
     icon: MapPin,
   },
-  // {
-  //   name: "Usuarios",
-  //   href: "/admin/usuarios",
-  //   icon: Users,
-  // },
+  {
+    name: "Album",
+    href: "/admin/albums",
+    icon: Users,
+  },
 ]
 
 export function AdminSidebar() {

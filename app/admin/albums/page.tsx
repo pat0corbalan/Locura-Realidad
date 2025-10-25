@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Edit, Trash2, MapPin, Eye, Images } from "lucide-react"
-import { AlbumModal } from "@/components/admin/album-modal" // 🔥 Nuevo modal
+import { AlbumModal } from "@/components/admin/album-modal"
 import { Album } from "@/components/types/album"
 
 export default function AlbumsPage() {

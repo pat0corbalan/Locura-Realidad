@@ -18,8 +18,12 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { Skeleton } from "@/components/ui/skeleton"; 
-import {optimizeCloudinaryImage} from "@/utils/optimizeCloudinary"
+import { Skeleton } from "@/components/ui/skeleton";
+import { optimizeCloudinaryImage } from "@/utils/optimizeCloudinary";
+
+// =========================================================================
+// INTERFACES (Sin cambios)
+// =========================================================================
 interface Product {
   _id: string;
   name: string;
@@ -37,6 +41,66 @@ interface Product {
 interface MerchandiseStoreProps {
   onAddToCart: (product: Product) => void;
 }
+
+// =========================================================================
+// COMPONENTE ESTÉTICO DE DESCRIPCIÓN EXPANDIBLE
+// =========================================================================
+interface ExpandableDescriptionProps {
+  description: string;
+  maxChars?: number; // Caracteres máximos antes de truncar
+}
+
+const ExpandableDescription: React.FC<ExpandableDescriptionProps> = ({
+  description,
+  maxChars = 100, // Límite estético de caracteres por defecto
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const shouldTruncate = description.length > maxChars;
+
+  // Si no hay que truncar, se muestra el CardDescription estándar.
+  if (!shouldTruncate) {
+    return (
+      <CardDescription className="text-muted-foreground text-sm">
+        {description}
+      </CardDescription>
+    );
+  }
+
+  // Contenido a mostrar (truncado o completo)
+  const displayContent = isExpanded
+    ? description
+    : description.substring(0, maxChars).trim() + "...";
+
+  return (
+    <div className="relative">
+      <CardDescription
+        // Se usa max-h-12 (aprox. 3-4 líneas) con overflow-hidden para la limitación visual
+        className={`text-muted-foreground text-sm transition-all duration-300 ${
+          !isExpanded ? "max-h-12 overflow-hidden" : ""
+        }`}
+      >
+        {displayContent}
+      </CardDescription>
+      {/* Degradado (fade-out) estético. Oculta la parte inferior del texto truncado
+        y lo hace ver profesional. Se usa 'bg-card' para coincidir con el fondo.
+      */}
+      {!isExpanded && (
+        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+      )}
+      <Button
+        variant="link"
+        size="sm"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-0 h-auto text-xs font-semibold mt-1 text-primary hover:text-primary/80"
+      >
+        {isExpanded ? "Ver menos" : "Ver más"}
+      </Button>
+    </div>
+  );
+};
+// =========================================================================
+// COMPONENTE PRINCIPAL
+// =========================================================================
 
 export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -129,10 +193,10 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                         <img
                           loading="lazy"
                           src={optimizeCloudinaryImage(product.image, {
-                            width: 800,         // o el ancho real del contenedor
+                            width: 800,
                             quality: "auto:good",
                             crop: "scale",
-                            format: "auto",     
+                            format: "auto",
                           })}
                           alt={product.name}
                           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
@@ -144,7 +208,10 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                             </Badge>
                           )}
                           {!product.inStock && (
-                            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                            <Badge
+                              variant="secondary"
+                              className="bg-muted text-muted-foreground"
+                            >
                               AGOTADO
                             </Badge>
                           )}
@@ -152,7 +219,9 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                         <div className="absolute top-4 right-4">
                           <div className="bg-black/70 rounded-full px-2 py-1 flex items-center gap-1">
                             <Star className="h-3 w-3 text-secondary fill-secondary" />
-                            <span className="text-white text-xs font-medium">{product.rating}</span>
+                            <span className="text-white text-xs font-medium">
+                              {product.rating}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -169,9 +238,12 @@ export function MerchandiseStore({ onAddToCart }: MerchandiseStoreProps) {
                             </Badge>
                           </div>
                         </div>
-                        <CardDescription className="text-muted-foreground text-sm">
-                          {product.description}
-                        </CardDescription>
+                        {/* APLICACIÓN DEL NUEVO COMPONENTE */}
+                        <ExpandableDescription
+                          description={product.description}
+                          maxChars={100} // Ajusta este valor si quieres que se muestren más o menos caracteres antes de truncar
+                        />
+                        
                       </CardHeader>
 
                       {/* Precios + Tallas + Botón */}
