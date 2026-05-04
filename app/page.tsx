@@ -15,7 +15,6 @@ import {
   BusIcon,
   CreditCard,
   Handshake,
-  Loader2,
 } from "lucide-react";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { ShoppingCartButton } from "@/components/shopping-cart";
@@ -288,7 +287,8 @@ export default function HomePage() {
       </section>
 
 
-      {/* SECCIÓN DE EVENTOS / TICKETS QR - Solo se muestra si hay eventos cargados */}
+      {/* Eventos / Tickets QR */}
+{/* SECCIÓN DE EVENTOS / TICKETS QR - Solo se muestra si hay eventos cargados */}
 {!loadingEventos && eventos.length > 0 && (
   <section
     id="eventos"
@@ -352,6 +352,99 @@ export default function HomePage() {
     </div>
   </section>
 )}
+
+
+      <RockQuote />
+
+      <SectionDivider variant="vinyl" />
+
+      {/* GALERIA */}
+      <section
+        id="Galeria"
+        role="region"
+        aria-label="Galería de Momentos"
+        className="relative z-10 py-16 px-4 bg-card/30"
+      >
+        <div className="container mx-auto">
+          <header className="mb-12 text-center">
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+              Galería de Momentos
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Reviví algunos viajes y eventos de los últimos años
+            </p>
+          </header>
+          <PhotoGallery />
+        </div>
+      </section>
+
+      <SectionDivider variant="lightning" />
+
+      {/* TIENDA */}
+      <section
+        id="Tienda"
+        role="region"
+        aria-label="Tienda de Merchandising"
+        className="relative z-10 py-16 overflow-hidden"
+      >
+        <div className="container mx-auto">
+          <header className="mb-12 text-center">
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+              Tienda
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Lleva con vos una remera que te identifique en cada viaje. Elegí tu diseño y tu banda. ¿Crees que falta alguna? Comunícate con nosotros y déjanos tu pedido.
+            </p>
+          </header>
+          <CartPageContent />
+        </div>
+      </section>
+
+      <section
+        role="region"
+        aria-label="Características principales"
+        className="relative z-10 py-16 px-4 bg-card/30"
+      >
+        <div className="container mx-auto">
+          <header className="mb-12 text-center">
+            <h2 className="text-4xl font-bold text-foreground text-rock-shadow">
+              Contáctanos
+            </h2>
+          </header>
+          <div className="grid gap-8 md:grid-cols-3">
+            {[
+              {
+                icon: Handshake,
+                title: "Contacto directo con nosotros.",
+                description:
+                  "Nos podes contactar a través de nuestras redes o nuestros números personales para una mejor atención",
+              },
+              {
+                icon: BusIcon,
+                title: "Viajes durante todo el año",
+                description:
+                  "Todos los meses podes encontrar fechas disponibles para reservas",
+              },
+              {
+                icon: CreditCard,
+                title: "Facilidad a la hora de pagar tu viaje o hacer una compra",
+                description:
+                  "Aceptamos todos los medios de pagos. 10% de descuento si abonas en transferencia",
+              },
+            ].map(({ icon: Icon, title, description }) => (
+              <article key={title} className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-rock-glow">
+                  <Icon className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                  {title}
+                </h3>
+                <p className="text-muted-foreground">{description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <footer
         role="contentinfo"
