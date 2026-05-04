@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/carousel";
 import { useState, useEffect } from "react";
 import { optimizeCloudinaryImage } from "@/utils/optimizeCloudinary";
+import  {ExpandableDescription} from "@/components/merchandise-store"; 
 
 interface TourListProps {
   tours: Tour[];
@@ -154,12 +155,13 @@ export function TourList({ tours, loading, error, onReservar }: TourListProps) {
                     >
                       {tour.title}
                     </h2>
-                    <p
-                      id={`tour-desc-${tour._id}`}
-                      className="text-muted-foreground line-clamp-3"
-                    >
-                      {tour.description}
-                    </p>
+                    <div id={`tour-desc-${tour._id}`}>
+                      <ExpandableDescription
+                        description={tour.description}
+                        maxChars={150}
+                      />
+                    </div>
+
                   </CardHeader>
 
                   <CardContent className="space-y-3 px-5 pt-0 pb-5">

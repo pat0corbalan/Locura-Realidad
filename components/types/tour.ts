@@ -7,4 +7,7 @@ export interface Tour {
   price: number
   image?: string // opcional porque puede venir como file
   grupo?: string
+
+  category?: string; 
+  type?: "tour" | "ticket";
 }

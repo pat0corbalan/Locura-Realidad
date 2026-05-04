@@ -186,3 +186,17 @@
   font-weight: 400;
   font-style: normal;
 }
+
+@keyframes scroll-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Opcional: pausa la animación al hover */
+.relative:hover > div {
+  animation-play-state: paused;
+}

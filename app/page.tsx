@@ -164,7 +164,7 @@ export default function HomePage() {
               id="mobile-menu"
               className="mt-4 flex flex-col space-y-4 md:hidden text-center"
             >
-              {["tours", "Galeria", "Tienda"].map((section) => (
+              {["tours", "eventos", "Galeria", "Tienda"].map((section) => (
                 <a
                   key={section}
                   href={`#${section}`}
@@ -178,7 +178,8 @@ export default function HomePage() {
           )}
         </div>
       </header>
-
+        
+      {/* HERO */}
       <section className="relative py-40 px-4 text-center z-10">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
         <div className="container mx-auto relative z-10">
@@ -229,7 +230,7 @@ export default function HomePage() {
 
       
       <SectionDivider variant="guitar" />
-
+      {/* VIAJES DISPONIBLES */}
       <section
         id="tours"
         role="region"
@@ -257,10 +258,83 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* Eventos / Tickets QR */}
+      {/* Eventos / Tickets QR */}
+<section
+  id="eventos"
+  role="region"
+  aria-label="Venta de Entradas"
+  className="relative z-10 py-16 px-4 bg-primary/5 border-y border-primary/20"
+>
+  <div className="container mx-auto">
+    <header className="mb-12 text-center">
+      <div className="inline-block p-3 rounded-full bg-primary/10 mb-4">
+        <Music className="h-8 w-8 text-primary" />
+      </div>
+      <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
+        Tickets & Eventos
+      </h2>
+      <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        Adquirí tus entradas anticipadas para nuestros eventos locales. 
+        Recibí tu <span className="font-bold text-foreground">acceso QR</span> al instante por WhatsApp o Email.
+      </p>
+    </header>
+
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Card de Evento */}
+      <div className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all shadow-lg">
+        <div className="aspect-video bg-muted relative overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:scale-110 transition-transform duration-500">
+             <Guitar className="h-12 w-12 text-primary/50" />
+          </div>
+          <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter">
+            Próxima Fecha
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <h3 className="text-xl font-bold mb-2">Festival Rock Santiago</h3>
+          <div className="space-y-2 mb-6">
+            <p className="flex items-center text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-2 text-primary" /> Club local, SDE
+            </p>
+            <p className="text-2xl font-black text-primary">$5.000</p>
+          </div>
+          
+          <Button 
+            className="w-full font-bold uppercase tracking-wider py-6"
+            onClick={() => 
+              handleReservarTour({
+                id: "event-001",
+                title: "Festival Rock Santiago",
+                // Usamos 'as any' para evitar el error de TypeScript 
+                // hasta que actualices tu interfaz Tour
+              } as any)
+            }
+          >
+            Comprar Ticket QR
+          </Button>
+        </div>
+      </div>
+      
+      {/* Placeholder para más eventos */}
+      <div className="hidden md:flex border-2 border-dashed border-border/50 rounded-xl items-center justify-center p-8 text-center bg-card/20">
+        <div>
+          <Music className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-muted-foreground italic text-sm">Más fechas por confirmar...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
       <RockQuote />
 
       <SectionDivider variant="vinyl" />
 
+      {/* GALERIA */}
       <section
         id="Galeria"
         role="region"
@@ -282,6 +356,7 @@ export default function HomePage() {
 
       <SectionDivider variant="lightning" />
 
+      {/* TIENDA */}
       <section
         id="Tienda"
         role="region"
