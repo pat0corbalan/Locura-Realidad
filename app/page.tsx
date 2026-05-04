@@ -288,87 +288,70 @@ export default function HomePage() {
       </section>
 
 
-      {/* SECCIÓN DE EVENTOS / TICKETS QR DINÁMICA */}
-      <section
-        id="eventos"
-        role="region"
-        aria-label="Venta de Entradas"
-        className="relative z-10 py-16 px-4 bg-primary/5 border-y border-primary/20"
-      >
-        <div className="container mx-auto">
-          <header className="mb-12 text-center">
-            <div className="inline-block p-3 rounded-full bg-primary/10 mb-4">
-              <Music className="h-8 w-8 text-primary" />
-            </div>
-            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow uppercase">
-              Tickets & Eventos
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Adquirí tus entradas anticipadas para nuestros eventos locales. 
-              Recibí tu <span className="font-bold text-foreground">acceso QR</span> al instante.
-            </p>
-          </header>
-
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {loadingEventos ? (
-              <div className="col-span-full flex flex-col items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                <p className="text-muted-foreground font-mono text-sm">Cargando cartelera...</p>
-              </div>
-            ) : eventos.length > 0 ? (
-              eventos.map((evento) => (
-                <div key={evento._id} className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all shadow-lg">
-                  <div className="aspect-video bg-muted relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:scale-110 transition-transform duration-500">
-                       <Guitar className="h-12 w-12 text-primary/50" />
-                    </div>
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter">
-                      Confirmado
-                    </div>
-                  </div>
-                  
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2 uppercase">{evento.titulo}</h3>
-                    <div className="space-y-2 mb-6">
-                      <p className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-2 text-primary" /> {evento.lugar}
-                      </p>
-                      <p className="text-2xl font-black text-primary">
-                        ${evento.precio.toLocaleString('es-AR')}
-                      </p>
-                    </div>
-                    
-                    <Button 
-                      className="w-full font-bold uppercase tracking-wider py-6"
-                      onClick={() => 
-                        handleReservarTour({
-                          id: evento._id,
-                          title: evento.titulo,
-                          precio: evento.precio,
-                        } as any)
-                      }
-                    >
-                      Comprar Ticket QR
-                    </Button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full border-2 border-dashed border-border/50 rounded-xl p-12 text-center bg-card/20">
-                <Music className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-muted-foreground italic text-sm">No hay eventos próximos. ¡Estate atento!</p>
-              </div>
-            )}
-            
-            {/* Solo mostramos el placeholder si hay eventos pero son pocos (estética) */}
-            {eventos.length > 0 && eventos.length < 3 && (
-              <div className="hidden md:flex border-2 border-dashed border-border/50 rounded-xl items-center justify-center p-8 text-center bg-card/20">
-                <p className="text-muted-foreground italic text-sm">Más fechas por confirmar...</p>
-              </div>
-            )}
-          </div>
+      {/* SECCIÓN DE EVENTOS / TICKETS QR - Solo se muestra si hay eventos cargados */}
+{!loadingEventos && eventos.length > 0 && (
+  <section
+    id="eventos"
+    role="region"
+    aria-label="Venta de Entradas"
+    className="relative z-10 py-16 px-4 bg-primary/5 border-y border-primary/20"
+  >
+    <div className="container mx-auto">
+      <header className="mb-12 text-center">
+        <div className="inline-block p-3 rounded-full bg-primary/10 mb-4">
+          <Music className="h-8 w-8 text-primary" />
         </div>
-      </section>
+        <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow uppercase">
+          Tickets & Eventos
+        </h2>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Adquirí tus entradas anticipadas para nuestros eventos locales. 
+          Recibí tu <span className="font-bold text-foreground">acceso QR</span> al instante.
+        </p>
+      </header>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {eventos.map((evento) => (
+          <div key={evento._id} className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all shadow-lg">
+            <div className="aspect-video bg-muted relative overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:scale-110 transition-transform duration-500">
+                 <Guitar className="h-12 w-12 text-primary/50" />
+              </div>
+              <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter">
+                Confirmado
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <h3 className="text-xl font-bold mb-2 uppercase">{evento.titulo}</h3>
+              <div className="space-y-2 mb-6">
+                <p className="flex items-center text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 mr-2 text-primary" /> {evento.lugar}
+                </p>
+                <p className="text-2xl font-black text-primary">
+                  ${evento.precio.toLocaleString('es-AR')}
+                </p>
+              </div>
+              
+              <Button 
+                className="w-full font-bold uppercase tracking-wider py-6"
+                onClick={() => 
+                  handleReservarTour({
+                    id: evento._id,
+                    title: evento.titulo,
+                    precio: evento.precio,
+                  } as any)
+                }
+              >
+                Comprar Ticket QR
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
 
       <footer
         role="contentinfo"
