@@ -24,7 +24,7 @@ const navigation = [
   },
   {
     // Esta es la nueva sección para gestionar lo que llega del Modal
-    name: "Ventas / QR", 
+    name: "Eventos", 
     href: "/admin/reservas",
     icon: Ticket,
   },

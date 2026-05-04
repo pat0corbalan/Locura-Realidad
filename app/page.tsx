@@ -15,6 +15,7 @@ import {
   BusIcon,
   CreditCard,
   Handshake,
+  Loader2,
 } from "lucide-react";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { ShoppingCartButton } from "@/components/shopping-cart";
@@ -31,9 +32,20 @@ import {
 import { Tour } from "@/components/types/tour";
 import { ReservaModal } from "@/components/reserva-modal";
 
+interface Evento {
+  _id: string;
+  titulo: string;
+  lugar: string;
+  precio: number;
+  fecha: string;
+  activo: boolean;
+}
+
 export default function HomePage() {
   const [tours, setTours] = useState<Tour[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]); // Estado para eventos
   const [loading, setLoading] = useState(true);
+  const [loadingEventos, setLoadingEventos] = useState(true); // Carga independiente para eventos
   const [error, setError] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -65,7 +77,24 @@ export default function HomePage() {
         setLoading(false);
       }
     }
+
+    // Fetch de Eventos locales
+    async function fetchEventos() {
+      try {
+        const res = await fetch("/api/eventos");
+        if (res.ok) {
+          const data = await res.json();
+          setEventos(data);
+        }
+      } catch (err) {
+        console.error("Error cargando eventos:", err);
+      } finally {
+        setLoadingEventos(false);
+      }
+    }
+
     fetchTours();
+    fetchEventos();
   }, []);
 
   return (
@@ -259,165 +288,84 @@ export default function HomePage() {
       </section>
 
 
-      {/* Eventos / Tickets QR */}
-      {/* Eventos / Tickets QR */}
-<section
-  id="eventos"
-  role="region"
-  aria-label="Venta de Entradas"
-  className="relative z-10 py-16 px-4 bg-primary/5 border-y border-primary/20"
->
-  <div className="container mx-auto">
-    <header className="mb-12 text-center">
-      <div className="inline-block p-3 rounded-full bg-primary/10 mb-4">
-        <Music className="h-8 w-8 text-primary" />
-      </div>
-      <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
-        Tickets & Eventos
-      </h2>
-      <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-        Adquirí tus entradas anticipadas para nuestros eventos locales. 
-        Recibí tu <span className="font-bold text-foreground">acceso QR</span> al instante por WhatsApp o Email.
-      </p>
-    </header>
-
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {/* Card de Evento */}
-      <div className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all shadow-lg">
-        <div className="aspect-video bg-muted relative overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:scale-110 transition-transform duration-500">
-             <Guitar className="h-12 w-12 text-primary/50" />
-          </div>
-          <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter">
-            Próxima Fecha
-          </div>
-        </div>
-        
-        <div className="p-6">
-          <h3 className="text-xl font-bold mb-2">Festival Rock Santiago</h3>
-          <div className="space-y-2 mb-6">
-            <p className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-2 text-primary" /> Club local, SDE
-            </p>
-            <p className="text-2xl font-black text-primary">$5.000</p>
-          </div>
-          
-          <Button 
-            className="w-full font-bold uppercase tracking-wider py-6"
-            onClick={() => 
-              handleReservarTour({
-                id: "event-001",
-                title: "Festival Rock Santiago",
-                // Usamos 'as any' para evitar el error de TypeScript 
-                // hasta que actualices tu interfaz Tour
-              } as any)
-            }
-          >
-            Comprar Ticket QR
-          </Button>
-        </div>
-      </div>
-      
-      {/* Placeholder para más eventos */}
-      <div className="hidden md:flex border-2 border-dashed border-border/50 rounded-xl items-center justify-center p-8 text-center bg-card/20">
-        <div>
-          <Music className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-          <p className="text-muted-foreground italic text-sm">Más fechas por confirmar...</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-      <RockQuote />
-
-      <SectionDivider variant="vinyl" />
-
-      {/* GALERIA */}
+      {/* SECCIÓN DE EVENTOS / TICKETS QR DINÁMICA */}
       <section
-        id="Galeria"
+        id="eventos"
         role="region"
-        aria-label="Galería de Momentos"
-        className="relative z-10 py-16 px-4 bg-card/30"
+        aria-label="Venta de Entradas"
+        className="relative z-10 py-16 px-4 bg-primary/5 border-y border-primary/20"
       >
         <div className="container mx-auto">
           <header className="mb-12 text-center">
-            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
-              Galería de Momentos
+            <div className="inline-block p-3 rounded-full bg-primary/10 mb-4">
+              <Music className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow uppercase">
+              Tickets & Eventos
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Reviví algunos viajes y eventos de los últimos años
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Adquirí tus entradas anticipadas para nuestros eventos locales. 
+              Recibí tu <span className="font-bold text-foreground">acceso QR</span> al instante.
             </p>
           </header>
-          <PhotoGallery />
-        </div>
-      </section>
 
-      <SectionDivider variant="lightning" />
-
-      {/* TIENDA */}
-      <section
-        id="Tienda"
-        role="region"
-        aria-label="Tienda de Merchandising"
-        className="relative z-10 py-16 overflow-hidden"
-      >
-        <div className="container mx-auto">
-          <header className="mb-12 text-center">
-            <h2 className="mb-4 text-4xl font-bold text-foreground text-rock-shadow">
-              Tienda
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Lleva con vos una remera que te identifique en cada viaje. Elegí tu diseño y tu banda. ¿Crees que falta alguna? Comunícate con nosotros y déjanos tu pedido.
-            </p>
-          </header>
-          <CartPageContent />
-        </div>
-      </section>
-
-      <section
-        role="region"
-        aria-label="Características principales"
-        className="relative z-10 py-16 px-4 bg-card/30"
-      >
-        <div className="container mx-auto">
-          <header className="mb-12 text-center">
-            <h2 className="text-4xl font-bold text-foreground text-rock-shadow">
-              Contáctanos
-            </h2>
-          </header>
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                icon: Handshake,
-                title: "Contacto directo con nosotros.",
-                description:
-                  "Nos podes contactar a través de nuestras redes o nuestros números personales para una mejor atención",
-              },
-              {
-                icon: BusIcon,
-                title: "Viajes durante todo el año",
-                description:
-                  "Todos los meses podes encontrar fechas disponibles para reservas",
-              },
-              {
-                icon: CreditCard,
-                title: "Facilidad a la hora de pagar tu viaje o hacer una compra",
-                description:
-                  "Aceptamos todos los medios de pagos. 10% de descuento si abonas en transferencia",
-              },
-            ].map(({ icon: Icon, title, description }) => (
-              <article key={title} className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-rock-glow">
-                  <Icon className="h-8 w-8 text-primary" />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {loadingEventos ? (
+              <div className="col-span-full flex flex-col items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-muted-foreground font-mono text-sm">Cargando cartelera...</p>
+              </div>
+            ) : eventos.length > 0 ? (
+              eventos.map((evento) => (
+                <div key={evento._id} className="group relative overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all shadow-lg">
+                  <div className="aspect-video bg-muted relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:scale-110 transition-transform duration-500">
+                       <Guitar className="h-12 w-12 text-primary/50" />
+                    </div>
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter">
+                      Confirmado
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2 uppercase">{evento.titulo}</h3>
+                    <div className="space-y-2 mb-6">
+                      <p className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-2 text-primary" /> {evento.lugar}
+                      </p>
+                      <p className="text-2xl font-black text-primary">
+                        ${evento.precio.toLocaleString('es-AR')}
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      className="w-full font-bold uppercase tracking-wider py-6"
+                      onClick={() => 
+                        handleReservarTour({
+                          id: evento._id,
+                          title: evento.titulo,
+                          precio: evento.precio,
+                        } as any)
+                      }
+                    >
+                      Comprar Ticket QR
+                    </Button>
+                  </div>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
-                  {title}
-                </h3>
-                <p className="text-muted-foreground">{description}</p>
-              </article>
-            ))}
+              ))
+            ) : (
+              <div className="col-span-full border-2 border-dashed border-border/50 rounded-xl p-12 text-center bg-card/20">
+                <Music className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-muted-foreground italic text-sm">No hay eventos próximos. ¡Estate atento!</p>
+              </div>
+            )}
+            
+            {/* Solo mostramos el placeholder si hay eventos pero son pocos (estética) */}
+            {eventos.length > 0 && eventos.length < 3 && (
+              <div className="hidden md:flex border-2 border-dashed border-border/50 rounded-xl items-center justify-center p-8 text-center bg-card/20">
+                <p className="text-muted-foreground italic text-sm">Más fechas por confirmar...</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -7,7 +7,6 @@ import {
   Clock, 
   Search, 
   MoreVertical, 
-  Mail, 
   Phone, 
   Ticket,
   MapPin,
@@ -15,7 +14,9 @@ import {
   Trash2,
   QrCode,
   Download,
-  Share2
+  Share2,
+  PlusCircle,
+  Calendar
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -59,6 +60,16 @@ export default function ReservasAdminPage() {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState("")
   const [selectedReserva, setSelectedReserva] = useState<Reserva | null>(null)
+  
+  // Estados para nuevos eventos
+  const [showEventoModal, setShowEventoModal] = useState(false)
+  const [isCreatingEvento, setIsCreatingEvento] = useState(false)
+  const [nuevoEvento, setNuevoEvento] = useState({
+    titulo: "",
+    lugar: "",
+    precio: "",
+    fecha: ""
+  })
 
   useEffect(() => {
     fetchReservas()
@@ -74,6 +85,32 @@ export default function ReservasAdminPage() {
       console.error("Error:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // --- LÓGICA DE EVENTOS ---
+  const handleCrearEvento = async () => {
+    if (!nuevoEvento.titulo || !nuevoEvento.precio) return alert("Completa los campos básicos")
+    setIsCreatingEvento(true)
+    try {
+      const res = await fetch('/api/eventos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...nuevoEvento,
+          precio: Number(nuevoEvento.precio),
+          activo: true
+        })
+      })
+      if (res.ok) {
+        alert("Evento publicado con éxito")
+        setShowEventoModal(false)
+        setNuevoEvento({ titulo: "", lugar: "", precio: "", fecha: "" })
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsCreatingEvento(false)
     }
   }
 
@@ -102,20 +139,16 @@ export default function ReservasAdminPage() {
     }
   }
 
-  // --- LÓGICA DE GENERACIÓN DE IMAGEN ---
+  // --- LÓGICA DE GENERACIÓN DE IMAGEN QR ---
   const generateQRImageBlob = async (reserva: Reserva): Promise<Blob | null> => {
     const svg = document.getElementById(`qr-${reserva._id}`) as unknown as SVGSVGElement;
     if (!svg) return null;
-
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
-
-    // Tamaño estándar para el QR
     canvas.width = 300;
     canvas.height = 300;
-
     return new Promise((resolve) => {
       img.onload = () => {
         if (ctx) {
@@ -125,7 +158,6 @@ export default function ReservasAdminPage() {
         }
         canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
       };
-      // Uso de btoa seguro para caracteres especiales
       img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
     });
   };
@@ -134,34 +166,21 @@ export default function ReservasAdminPage() {
     try {
       const blob = await generateQRImageBlob(reserva);
       if (!blob) return;
-
       const shareText = `¡Hola ${reserva.nombre}! 🎫\n\nAquí tienes tu ticket para *${reserva.tour_title}*.\n\n*REF:* #${reserva._id.slice(-6).toUpperCase()}\n\nPresenta este código al ingresar. ¡Nos vemos! 🚌🔥`;
-      const fileName = `Ticket-${reserva.apellido}.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
+      const file = new File([blob], `Ticket-${reserva.apellido}.png`, { type: "image/png" });
 
-      // Intento de compartir archivo (Móviles con HTTPS)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Ticket Locura & Realidad',
-          text: shareText,
-        });
+        await navigator.share({ files: [file], title: 'Ticket Locura & Realidad', text: shareText });
       } else {
-        // Fallback: Descarga + WhatsApp Web (PC/Navegadores antiguos)
         const urlImage = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = urlImage;
-        link.download = fileName;
+        link.download = `Ticket-${reserva.apellido}.png`;
         link.click();
         URL.revokeObjectURL(urlImage);
-
-        const waUrl = `https://wa.me/54${reserva.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(shareText)}`;
-        window.open(waUrl, '_blank');
-        alert("La imagen se descargó. Por favor adjúntala manualmente en el chat de WhatsApp.");
+        window.open(`https://wa.me/54${reserva.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(shareText)}`, '_blank');
       }
-    } catch (err) {
-      console.error("Error al compartir:", err);
-    }
+    } catch (err) { console.error(err) }
   };
 
   const descargarQR = async (reserva: Reserva) => {
@@ -189,31 +208,39 @@ export default function ReservasAdminPage() {
 
   return (
     <div className="p-8 space-y-6 bg-background min-h-screen text-foreground">
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Ventas / QR</h1>
-          <p className="text-muted-foreground font-medium">Panel Administrativo - Locura & Realidad.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-red-600">Locura & Realidad</h1>
+          <p className="text-muted-foreground font-medium">Panel de Control Administrativo</p>
         </div>
-        <Button onClick={fetchReservas} variant="outline" className="gap-2 border-primary/20">
-          <RefreshCcw size={16} className={loading ? "animate-spin" : ""} /> Actualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowEventoModal(true)} className="gap-2 bg-foreground text-background hover:bg-foreground/90">
+            <PlusCircle size={18} /> Nuevo Evento
+          </Button>
+          <Button onClick={fetchReservas} variant="outline" className="gap-2">
+            <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
+          </Button>
+        </div>
       </div>
 
+      {/* BUSCADOR */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
         <Input 
           placeholder="Buscar cliente, tour o #REF..." 
-          className="pl-10 bg-card border-border shadow-sm focus-visible:ring-red-500" 
+          className="pl-10 bg-card" 
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
         />
       </div>
 
+      {/* TABLA DE RESERVAS */}
       <div className="bg-card rounded-xl border border-border shadow-md overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50 text-xs uppercase">
+          <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="font-bold">Fecha / REF</TableHead>
+              <TableHead className="font-bold">REF / Fecha</TableHead>
               <TableHead className="font-bold">Cliente</TableHead>
               <TableHead className="font-bold">Servicio</TableHead>
               <TableHead className="font-bold">Estado</TableHead>
@@ -222,25 +249,21 @@ export default function ReservasAdminPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-20 animate-pulse text-muted-foreground">Sincronizando con base de datos...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center py-20 animate-pulse">Cargando datos...</TableCell></TableRow>
             ) : (
               reservasFiltradas.map((reserva) => (
-                <TableRow key={reserva._id} className="hover:bg-muted/5 transition-colors border-b">
+                <TableRow key={reserva._id} className="hover:bg-muted/5 transition-colors">
                   <TableCell>
-                    <div className="text-[10px] text-muted-foreground font-bold">{new Date(reserva.fecha).toLocaleDateString()}</div>
-                    <div className="font-mono font-bold text-red-600 tracking-tighter">#{reserva._id.slice(-6).toUpperCase()}</div>
+                    <div className="font-mono font-bold text-red-600">#{reserva._id.slice(-6).toUpperCase()}</div>
+                    <div className="text-[10px] text-muted-foreground">{new Date(reserva.fecha).toLocaleDateString()}</div>
                   </TableCell>
                   <TableCell>
                     <div className="font-bold">{reserva.nombre} {reserva.apellido}</div>
-                    <div className="text-[11px] text-muted-foreground italic flex items-center gap-1">
-                      <Phone size={10} /> {reserva.telefono}
-                    </div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Phone size={10} /> {reserva.telefono}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className={reserva.tipo === 'ticket' ? "p-1.5 bg-red-500/10 rounded-md" : "p-1.5 bg-blue-500/10 rounded-md"}>
-                        {reserva.tipo === 'ticket' ? <Ticket size={14} className="text-red-500"/> : <MapPin size={14} className="text-blue-500"/>}
-                      </div>
+                      {reserva.tipo === 'ticket' ? <Ticket size={14} className="text-red-500"/> : <MapPin size={14} className="text-blue-500"/>}
                       <span className="text-sm font-medium">{reserva.tour_title}</span>
                     </div>
                   </TableCell>
@@ -249,25 +272,21 @@ export default function ReservasAdminPage() {
                     <div className="flex justify-end gap-2">
                       {reserva.estado === 'pendiente' ? (
                         <>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8 font-bold" onClick={() => handleUpdateEstado(reserva._id, 'confirmado')}>Aprobar</Button>
-                          <Button size="sm" variant="destructive" className="h-8 font-bold" onClick={() => handleUpdateEstado(reserva._id, 'rechazado')}>Rechazar</Button>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8" onClick={() => handleUpdateEstado(reserva._id, 'confirmado')}>Aprobar</Button>
+                          <Button size="sm" variant="destructive" className="h-8" onClick={() => handleUpdateEstado(reserva._id, 'rechazado')}>Rechazar</Button>
                         </>
                       ) : (
                         <div className="flex gap-2">
                           {reserva.estado === 'confirmado' && (
-                            <Button size="sm" variant="outline" className="h-8 border-blue-500 text-blue-500 hover:bg-blue-50" onClick={() => setSelectedReserva(reserva)}>
-                              <QrCode size={16} className="mr-1" /> Ver QR
+                            <Button size="sm" variant="outline" className="h-8 border-blue-500 text-blue-500" onClick={() => setSelectedReserva(reserva)}>
+                              <QrCode size={16} className="mr-1" /> QR
                             </Button>
                           )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical size={18}/></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleUpdateEstado(reserva._id, 'pendiente')} className="cursor-pointer">
-                                <Clock className="mr-2 h-4 w-4"/> Revertir
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDeleteReserva(reserva._id)} className="text-red-600 cursor-pointer">
-                                <Trash2 className="mr-2 h-4 w-4"/> Eliminar
-                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateEstado(reserva._id, 'pendiente')}><Clock className="mr-2 h-4 w-4"/> Revertir</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeleteReserva(reserva._id)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4"/> Eliminar</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -281,38 +300,82 @@ export default function ReservasAdminPage() {
         </Table>
       </div>
 
-      {/* MODAL DEL QR */}
+      {/* MODAL CREAR EVENTO */}
+      <Dialog open={showEventoModal} onOpenChange={setShowEventoModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="text-red-600" /> Crear Nuevo Evento
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold uppercase tracking-tighter">Título del Evento</label>
+              <Input 
+                placeholder="Ej: Festival Rock Santiago" 
+                value={nuevoEvento.titulo}
+                onChange={e => setNuevoEvento({...nuevoEvento, titulo: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold uppercase tracking-tighter">Lugar / Ubicación</label>
+              <Input 
+                placeholder="Ej: Club local, SDE" 
+                value={nuevoEvento.lugar}
+                onChange={e => setNuevoEvento({...nuevoEvento, lugar: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-tighter">Precio ($)</label>
+                <Input 
+                  type="number" 
+                  placeholder="5000" 
+                  value={nuevoEvento.precio}
+                  onChange={e => setNuevoEvento({...nuevoEvento, precio: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-tighter">Fecha</label>
+                <Input 
+                  type="date" 
+                  value={nuevoEvento.fecha}
+                  onChange={e => setNuevoEvento({...nuevoEvento, fecha: e.target.value})}
+                />
+              </div>
+            </div>
+            <Button 
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 mt-2"
+              onClick={handleCrearEvento}
+              disabled={isCreatingEvento}
+            >
+              {isCreatingEvento ? "Publicando..." : "PUBLICAR EVENTO"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL VISUALIZAR QR */}
       <Dialog open={!!selectedReserva} onOpenChange={() => setSelectedReserva(null)}>
         <DialogContent className="sm:max-w-md flex flex-col items-center">
           <DialogHeader className="w-full text-center">
             <DialogTitle className="text-xl">Ticket: {selectedReserva?.nombre} {selectedReserva?.apellido}</DialogTitle>
           </DialogHeader>
-          
           <div className="bg-white p-6 rounded-2xl shadow-xl border-4 border-muted mt-2">
             {selectedReserva && (
-              <QRCodeSVG 
-                id={`qr-${selectedReserva._id}`}
-                value={selectedReserva._id} 
-                size={220}
-                level="H"
-                includeMargin={true}
-              />
+              <QRCodeSVG id={`qr-${selectedReserva._id}`} value={selectedReserva._id} size={220} level="H" includeMargin={true} />
             )}
           </div>
-
           <div className="text-center mt-3">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Código de Validación</span>
-            <p className="font-mono font-bold text-2xl text-red-600 tracking-tighter">
-              #{selectedReserva?._id.slice(-6).toUpperCase()}
-            </p>
-            <p className="text-xs font-semibold text-foreground mt-1 uppercase italic">{selectedReserva?.tour_title}</p>
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Código de Validación</span>
+            <p className="font-mono font-bold text-2xl text-red-600 tracking-tighter">#{selectedReserva?._id.slice(-6).toUpperCase()}</p>
+            <p className="text-xs font-semibold uppercase italic">{selectedReserva?.tour_title}</p>
           </div>
-
           <div className="grid grid-cols-2 gap-4 w-full mt-8">
-            <Button variant="outline" className="gap-2 border-border" onClick={() => selectedReserva && descargarQR(selectedReserva)}>
+            <Button variant="outline" className="gap-2" onClick={() => selectedReserva && descargarQR(selectedReserva)}>
               <Download size={18} /> Guardar
             </Button>
-            <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 font-bold shadow-md transition-all active:scale-95" onClick={() => selectedReserva && handleShare(selectedReserva)}>
+            <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 font-bold" onClick={() => selectedReserva && handleShare(selectedReserva)}>
               <Share2 size={18} /> Enviar QR
             </Button>
           </div>
