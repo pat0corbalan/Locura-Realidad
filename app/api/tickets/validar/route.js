@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import Ticket from "@/models/Ticket";
 import mongoose from "mongoose"; // Importamos mongoose para validar el ID
 
-export async function POST(req) { // Si usas JS, quita el ': Request'
+export async function POST(req) { 
   try {
     await connectDB();
     const { ticketId } = await req.json();
