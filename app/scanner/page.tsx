@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Html5QrcodeScanner } from "html5-qrcode"
-import { CheckCircle2, XCircle, Loader2, Scan, User, Ticket, AlertTriangle } from "lucide-react"
+import { CheckCircle2, XCircle, Loader2, RefreshCcw, User, Ticket, Scan } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,9 +19,9 @@ export default function ScannerPage() {
     const scanner = new Html5QrcodeScanner(
       "reader",
       { 
-        fps: 20, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
+        fps: 20, // Más fluido
+        qrbox: { width: 200, height: 200 },
+        aspectRatio: 1.0 
       },
       false
     )
@@ -38,8 +38,7 @@ export default function ScannerPage() {
 
     return () => {
       if (scannerRef.current) {
-        void scannerRef.current.clear()
-        scannerRef.current = null
+        scannerRef.current.clear().catch(console.error)
       }
     }
   }, [])
@@ -56,15 +55,15 @@ export default function ScannerPage() {
 
       if (res.ok) {
         setStatus("success")
-        setMessage("ACCESO PERMITIDO")
+        setMessage("ACCESO CONCEDIDO")
         setTicketData(data.ticket)
       } else {
         setStatus("error")
-        setMessage(data.error || "TICKET INVÁLIDO")
+        setMessage(data.error || "TICKET NO VÁLIDO")
       }
     } catch (error) {
       setStatus("error")
-      setMessage("SIN CONEXIÓN")
+      setMessage("ERROR DE CONEXIÓN")
     }
   }
 
@@ -76,114 +75,153 @@ export default function ScannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 flex flex-col items-center p-4 font-sans">
-      
-      {/* Header oficial del Tour */}
-      <header className="w-full max-w-md pt-8 pb-6 text-center">
-        <h1 className="text-3xl font-black italic tracking-tighter text-white">
-          LOCURA Y REALIDAD <span className="text-red-600">TOUR</span>
-        </h1>
-        <div className="flex justify-center gap-2 mt-2">
-          <Badge className="bg-zinc-800 text-zinc-400 border-none hover:bg-zinc-800">STAFF ONLY</Badge>
-          <Badge className="bg-red-600 text-white border-none animate-pulse uppercase text-[10px]">Control en Vivo</Badge>
-        </div>
-      </header>
-
-      <main className="w-full max-w-md flex-1 flex flex-col gap-6">
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col items-center p-6 font-sans">
+      <div className="w-full max-w-md flex flex-col gap-6">
         
-        {/* Contenedor del Scanner / Resultados */}
-        <div className={`relative rounded-3xl border-2 transition-all duration-300 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]
-          ${status === 'success' ? 'border-green-500 bg-green-950/20' : 
-            status === 'error' ? 'border-red-600 bg-red-950/20' : 
-            'border-zinc-800 bg-zinc-900/50'}`}>
-          
-          {status === "idle" && (
-            <div className="p-4">
-              <div id="reader" className="overflow-hidden rounded-2xl bg-black"></div>
-              <div className="py-6 flex flex-col items-center gap-2">
-                <Scan className="text-zinc-600 animate-pulse" />
-                <p className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Esperando Código QR...</p>
-              </div>
-            </div>
-          )}
+        {/* Header */}
+        <header className="text-center pt-4">
+          <h1 className="text-3xl font-black italic tracking-tighter text-white leading-none">
+            LOCURA Y REALIDAD <span className="text-red-600 font-black">TOUR</span>
+          </h1>
+          <div className="flex justify-center gap-2 mt-3">
+            <Badge className="bg-zinc-900 text-zinc-500 border-zinc-800 uppercase text-[9px] tracking-widest font-bold">Staff Control</Badge>
+            <Badge className="bg-red-600/10 text-red-500 border-red-600/20 animate-pulse uppercase text-[9px] tracking-widest font-bold">En Vivo</Badge>
+          </div>
+        </header>
 
-          {(status !== "idle") && (
-            <div className="p-8 flex flex-col items-center justify-center min-h-[350px] animate-in fade-in zoom-in duration-200">
-              
+        {/* Lector QR - Contenedor Fijo */}
+        <div className={`relative w-full aspect-square max-h-[380px] overflow-hidden rounded-[2.5rem] border-4 transition-all duration-500 shadow-2xl bg-zinc-950 ${
+          status === 'success' ? 'border-green-500 shadow-green-500/20 scale-[0.98]' : 
+          status === 'error' ? 'border-red-600 shadow-red-600/20 scale-[0.98]' : 'border-zinc-900'
+        }`}>
+          
+          <div id="reader" className="w-full h-full"></div>
+
+          {/* Overlay de Carga/Estado */}
+          {status !== 'idle' && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-20 flex items-center justify-center p-6 text-center">
               {status === "loading" && (
-                <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="h-12 w-12 animate-spin text-red-600" />
-                  <p className="font-black italic tracking-widest uppercase">Consultando base...</p>
+                <div className="space-y-4">
+                  <Loader2 className="h-12 w-12 animate-spin mx-auto text-red-600" />
+                  <p className="font-black italic tracking-widest text-white uppercase">Validando...</p>
                 </div>
               )}
 
               {status === "success" && (
-                <div className="w-full space-y-6">
-                  <div className="flex justify-center">
-                    <div className="bg-green-500 rounded-full p-3 shadow-[0_0_30px_rgba(34,197,94,0.5)]">
-                      <CheckCircle2 size={48} className="text-black" />
-                    </div>
+                <div className="animate-in zoom-in duration-300 space-y-4 w-full">
+                  <div className="bg-green-500 rounded-full p-4 w-fit mx-auto">
+                    <CheckCircle2 className="h-12 w-12 text-black" />
                   </div>
-                  
-                  <div className="text-center">
-                    <h2 className="text-4xl font-black italic text-green-500 leading-none mb-2">{message}</h2>
-                    <p className="text-[10px] text-zinc-500 font-bold tracking-[0.3em] uppercase">Entrada verificada</p>
-                  </div>
-
-                  <div className="bg-black/60 rounded-2xl p-5 space-y-3 border border-white/5">
-                    <div className="flex items-center gap-3">
-                      <User size={18} className="text-zinc-500" />
-                      <span className="font-bold text-lg uppercase truncate">{ticketData?.nombreCliente}</span>
+                  <h2 className="text-3xl font-black italic text-green-500 leading-tight tracking-tighter uppercase">
+                    {message}
+                  </h2>
+                  <div className="bg-zinc-900/50 rounded-2xl p-4 text-left border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <User size={16} className="text-red-600" />
+                      <p className="font-bold uppercase text-white truncate">{ticketData?.nombreCliente || 'Cliente General'}</p>
                     </div>
-                    <div className="flex items-center gap-3 border-t border-white/5 pt-3">
-                      <Ticket size={18} className="text-zinc-500" />
-                      <span className="text-sm font-medium text-zinc-300 uppercase">{ticketData?.eventoNombre || "Ticket General"}</span>
+                    <div className="flex items-center gap-3 opacity-60">
+                      <Ticket size={16} />
+                      <p className="text-xs uppercase font-bold tracking-tighter truncate">{ticketData?.eventoNombre || 'Entrada Local'}</p>
                     </div>
                   </div>
                 </div>
               )}
 
               {status === "error" && (
-                <div className="w-full space-y-6 text-center">
-                  <div className="flex justify-center">
-                    <div className="bg-red-600 rounded-full p-3 shadow-[0_0_30px_rgba(220,38,38,0.5)]">
-                      <XCircle size={48} className="text-white" />
-                    </div>
+                <div className="animate-in zoom-in duration-300 space-y-4">
+                  <div className="bg-red-600 rounded-full p-4 w-fit mx-auto">
+                    <XCircle className="h-12 w-12 text-white" />
                   </div>
-                  <div>
-                    <h2 className="text-4xl font-black italic text-red-600 leading-none mb-2">{message}</h2>
-                    <div className="flex items-center justify-center gap-2 text-zinc-400">
-                      <AlertTriangle size={14} />
-                      <p className="text-xs font-bold uppercase tracking-wider">Acceso Denegado</p>
-                    </div>
-                  </div>
+                  <h2 className="text-3xl font-black italic text-red-600 leading-tight tracking-tighter uppercase">
+                    {message}
+                  </h2>
                 </div>
               )}
-
-              <Button 
-                onClick={resetScanner} 
-                className={`w-full mt-8 h-14 rounded-xl font-black italic tracking-wider transition-transform active:scale-95
-                  ${status === 'error' ? 'bg-red-600 hover:bg-red-700' : 'bg-white text-black hover:bg-zinc-200'}`}
-              >
-                REINTENTAR / SIGUIENTE
-              </Button>
             </div>
           )}
         </div>
 
-        {/* Info de sesión o logs rápidos (opcional) */}
-        <div className="mt-auto pb-6 text-center">
-          <p className="text-[9px] text-zinc-700 font-bold tracking-[.4em] uppercase">
-            Locura y Realidad — Terminal de Acceso
-          </p>
+        {/* Botón de Acción - Siempre visible o post-escaneo */}
+        <div className="px-2">
+          {status !== "idle" && status !== "loading" ? (
+            <Button 
+              onClick={resetScanner} 
+              className={`w-full h-16 rounded-2xl font-black italic tracking-widest transition-all active:scale-95 shadow-xl ${
+                status === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-white text-black hover:bg-zinc-200'
+              }`}
+            >
+              <RefreshCcw className="mr-2 h-5 w-5" />
+              REINTENTAR / SIGUIENTE
+            </Button>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-zinc-600 text-[10px] font-bold tracking-[0.3em] uppercase animate-pulse">
+                Apunta al código QR para escanear
+              </p>
+            </div>
+          )}
         </div>
-      </main>
+
+        <footer className="mt-auto pt-8 pb-4 opacity-20 text-center">
+          <p className="text-[8px] text-white font-bold tracking-[0.5em] uppercase">
+            Locura y Realidad — Sistema de Control
+          </p>
+        </footer>
+      </div>
 
       <style jsx global>{`
-        #reader { border: none !important; }
-        #reader video { border-radius: 1rem; object-fit: cover; }
-        #reader__dashboard { display: none !important; }
-        button { text-transform: uppercase; }
+        /* LIMPIEZA CRÍTICA DE LA LIBRERÍA */
+        #reader { 
+          border: none !important; 
+          display: flex flex-col;
+          align-items: center;
+        }
+        #reader__scan_region {
+          background: transparent !important;
+        }
+        #reader__scan_region video {
+          border-radius: 0 !important;
+          object-fit: cover !important;
+          height: 380px !important;
+        }
+        
+        /* Ocultar basurita visual */
+        #reader__dashboard, 
+        #reader__status_span, 
+        #reader header, 
+        img[alt="Info icon"] { 
+          display: none !important; 
+        }
+
+        /* Botón de permiso (cuando aparece) */
+        #reader__dashboard_section_csr button {
+          background-color: #dc2626 !important;
+          color: white !important;
+          border: none !important;
+          padding: 12px 24px !important;
+          border-radius: 12px !important;
+          font-weight: 900 !important;
+          font-style: italic !important;
+          text-transform: uppercase !important;
+          margin-top: 100px !important;
+        }
+
+        /* Selector de cámara */
+        #reader__camera_selection {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 30;
+          background: #18181b;
+          color: white;
+          border: 1px solid #27272a;
+          border-radius: 8px;
+          padding: 5px;
+          font-size: 10px;
+          max-width: 200px;
+        }
       `}</style>
     </div>
   )
