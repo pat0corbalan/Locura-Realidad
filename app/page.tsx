@@ -500,110 +500,111 @@ export default function HomePage() {
         <div className="absolute -right-4 -top-4 z-20 hidden h-24 w-24 border-r border-t border-red-500/50 sm:block" />
         <div className="absolute -bottom-4 -left-4 z-20 hidden h-24 w-24 border-b border-l border-red-500/50 sm:block" />
 
-        {/* VIDEO FRAME */}
-        <div className="relative aspect-[4/5] overflow-hidden border border-white/15 bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.65)]">
+        
+      {/* VIDEO FRAME */}
+      <div className="relative aspect-[4/5] overflow-hidden border border-white/15 bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.65)]">
 
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/images/rock-poster.jpg"
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source
-              src="/videos/rock-background.mp4"
-              type="video/mp4"
-            />
-          </video>
-
-          {/* CINEMATIC OVERLAYS */}
-          <div className="absolute inset-0 bg-black/30" />
-
-          <div className="absolute inset-0 bg-gradient-to-br from-red-950/45 via-transparent to-black/80" />
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/20" />
-
-          {/* SUBTLE TEXTURE */}
-          <div
-            className="absolute inset-0 opacity-[0.12]"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg,transparent 48%,rgba(255,255,255,.15) 49%,transparent 50%)",
-              backgroundSize: "22px 22px",
-            }}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="none"
+          poster="/images/rock-poster.jpg"
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source
+            src="https://res.cloudinary.com/ddfojw7jj/video/upload/w_720,q_auto,f_auto/v1795029441/rock-background_vvsjt1.mp4"
+            type="video/mp4"
           />
+        </video>
 
-          {/* TOP LABEL */}
-          <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="h-2 w-2 bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" />
-              <span className="text-[9px] font-black uppercase tracking-[.28em] text-white/80">
-                Locura & Realidad
-              </span>
-            </div>
+        {/* CINEMATIC OVERLAYS */}
+        <div className="absolute inset-0 bg-black/30" />
 
-            <span className="border border-white/15 bg-black/20 px-3 py-1.5 text-[8px] font-bold uppercase tracking-[.2em] text-white/65 backdrop-blur-md">
-              Desde el 2022
+        <div className="absolute inset-0 bg-gradient-to-br from-red-950/45 via-transparent to-black/80" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/20" />
+
+        {/* SUBTLE TEXTURE */}
+        <div
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg,transparent 48%,rgba(255,255,255,.15) 49%,transparent 50%)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+
+        {/* TOP LABEL */}
+        <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="h-2 w-2 bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" />
+            <span className="text-[9px] font-black uppercase tracking-[.28em] text-white/80">
+              Locura & Realidad
             </span>
           </div>
 
-          {/* CENTRAL GRAPHIC */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          <span className="border border-white/15 bg-black/20 px-3 py-1.5 text-[8px] font-bold uppercase tracking-[.2em] text-white/65 backdrop-blur-md">
+            Desde el 2022
+          </span>
+        </div>
 
-            <div className="relative flex h-64 w-64 items-center justify-center rounded-full border border-white/10 bg-black/10 backdrop-blur-[1px] sm:h-72 sm:w-72">
+        {/* CENTRAL GRAPHIC */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative flex h-64 w-64 items-center justify-center rounded-full border border-white/10 bg-black/10 backdrop-blur-[1px] sm:h-72 sm:w-72">
 
-              <div className="absolute inset-5 rounded-full border border-white/10" />
+            <div className="absolute inset-5 rounded-full border border-white/10" />
 
-              <div className="absolute inset-10 rounded-full border border-red-500/25" />
+            <div className="absolute inset-10 rounded-full border border-red-500/25" />
 
-              <div className="absolute inset-0 rounded-full bg-red-600/[0.035] blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-red-600/[0.035] blur-xl" />
 
-              <Disc3
-                className="absolute h-52 w-52 text-white/[0.10] sm:h-60 sm:w-60"
-                strokeWidth={0.45}
-              />
+            <Disc3
+              className="absolute h-52 w-52 text-white/[0.10] sm:h-60 sm:w-60"
+              strokeWidth={0.45}
+            />
 
-              {/* <Music
-                className="relative z-10 h-36 w-36 -rotate-[18deg] text-red-400/90 drop-shadow-[0_0_35px_rgba(239,68,68,.5)] sm:h-44 sm:w-44"
-                strokeWidth={0.65}
-              /> */}
-            </div>
-          </div>
-
-          {/* BOTTOM CONTENT */}
-          <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-9">
-
-            <div className="mb-4 flex items-center gap-3">
-              <span className="h-px w-8 bg-red-500" />
-              <span className="text-[9px] font-black uppercase tracking-[.3em] text-white/65">
-                Más que un tour
-              </span>
-            </div>
-
-            <p
-              className="text-5xl font-black uppercase leading-[.83] tracking-[-.035em] text-white sm:text-6xl"
-              style={{ fontFamily: "var(--font-londrina)" }}
-            >
-              UNA PASIÓN
-              <br />
-              <span className="text-red-500">
-                QUE NOS UNE.
-              </span>
-            </p>
-
-            <div className="mt-6 h-px w-full bg-white/15" />
-
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-[8px] font-bold uppercase tracking-[.24em] text-white/45">
-                Desde Santiago para todo el rock
-              </span>
-
-              <Music className="h-4 w-4 text-red-500" />
-            </div>
+            {/* <Music
+              className="relative z-10 h-36 w-36 -rotate-[18deg] text-red-400/90 drop-shadow-[0_0_35px_rgba(239,68,68,.5)] sm:h-44 sm:w-44"
+              strokeWidth={0.65}
+            /> */}
           </div>
         </div>
+
+        {/* BOTTOM CONTENT */}
+        <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-9">
+
+          <div className="mb-4 flex items-center gap-3">
+            <span className="h-px w-8 bg-red-500" />
+            <span className="text-[9px] font-black uppercase tracking-[.3em] text-white/65">
+              Más que un tour
+            </span>
+          </div>
+
+          <p
+            className="text-5xl font-black uppercase leading-[.83] tracking-[-.035em] text-white sm:text-6xl"
+            style={{ fontFamily: "var(--font-londrina)" }}
+          >
+            UNA PASIÓN
+            <br />
+            <span className="text-red-500">
+              QUE NOS UNE.
+            </span>
+          </p>
+
+          <div className="mt-6 h-px w-full bg-white/15" />
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-[8px] font-bold uppercase tracking-[.24em] text-white/45">
+              Desde Santiago para todo el rock
+            </span>
+
+            <Music className="h-4 w-4 text-red-500" />
+          </div>
+        </div>
+      </div>
+
 
         {/* EXTERNAL LABEL */}
         <div className="mt-6 flex items-center justify-end gap-3 text-[9px] font-black uppercase tracking-[.24em] text-white/30">
