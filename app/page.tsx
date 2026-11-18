@@ -504,21 +504,20 @@ export default function HomePage() {
       {/* VIDEO FRAME */}
       <div className="relative aspect-[4/5] overflow-hidden border border-white/15 bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.65)]">
 
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          webkit-playsinline="true"
-          preload="auto"
-          poster="/images/rock-poster.jpg"
-          className="absolute inset-0 h-full w-full object-cover"
-        >
-          <source
-            src="https://res.cloudinary.com/ddfojw7jj/video/upload/w_720,q_auto/v1795029441/rock-background_vvsjt1.mp4"
-            type="video/mp4"
-          />
-        </video>
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        poster="/images/rock-poster.jpg"
+        className="absolute inset-0 h-full w-full object-cover"
+      >
+        <source
+          src="https://res.cloudinary.com/ddfojw7jj/video/upload/w_720,q_auto,vc_h264:baseline/v1795029441/rock-background_vvsjt1.mp4"
+          type="video/mp4"
+        />
+      </video>
 
         {/* CINEMATIC OVERLAYS */}
         <div className="absolute inset-0 bg-black/30" />
