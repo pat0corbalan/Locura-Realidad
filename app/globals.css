@@ -1,0 +1,724 @@
+
+/* =========================================================
+   ROCK / HEAVY METAL DESIGN SYSTEM
+   Premium Dark Edition
+   Tailwind CSS v4
+   ========================================================= */
+
+/* FUENTES */
+@import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Bogle&family=Bungee+Tint&family=Londrina+Shadow&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================================
+   1. DESIGN TOKENS
+   ========================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --background: oklch(0.09 0.005 25);
+  --foreground: oklch(0.97 0.005 25);
+
+  --card: oklch(0.13 0.008 25);
+  --card-foreground: oklch(0.97 0.005 25);
+
+  --popover: oklch(0.12 0.008 25);
+  --popover-foreground: oklch(0.97 0.005 25);
+
+  /* Brand colors */
+  --primary: oklch(0.58 0.24 25);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.76 0.15 85);
+  --secondary-foreground: oklch(0.12 0.02 70);
+
+  --accent: oklch(0.72 0.17 75);
+  --accent-foreground: oklch(0.12 0.02 70);
+
+  /* Muted */
+  --muted: oklch(0.21 0.008 25);
+  --muted-foreground: oklch(0.68 0.01 25);
+
+  /* Destructive */
+  --destructive: oklch(0.58 0.24 25);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Borders */
+  --border: oklch(0.28 0.015 25);
+  --input: oklch(0.16 0.01 25);
+  --ring: oklch(0.65 0.24 25);
+
+  /* Charts */
+  --chart-1: oklch(0.58 0.24 25);
+  --chart-2: oklch(0.76 0.15 85);
+  --chart-3: oklch(0.68 0.16 15);
+  --chart-4: oklch(0.65 0.01 250);
+  --chart-5: oklch(0.42 0.08 25);
+
+  /* Sidebar */
+  --sidebar: oklch(0.07 0.005 25);
+  --sidebar-foreground: oklch(0.97 0.005 25);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  /* Radius */
+  --radius: 0.75rem;
+
+  /* Custom brand tokens */
+  --rock-red: #dc2626;
+  --rock-red-bright: #ff3030;
+  --rock-red-dark: #7f1010;
+
+  --rock-gold: #d4af37;
+  --rock-gold-light: #f5d878;
+
+  --rock-black: #050505;
+  --rock-surface: #101010;
+  --rock-surface-light: #191919;
+
+  /* Shadows */
+  --shadow-red:
+    0 0 10px rgb(220 38 38 / 20%),
+    0 0 25px rgb(220 38 38 / 10%);
+
+  --shadow-gold:
+    0 0 10px rgb(212 175 55 / 20%);
+
+  --shadow-card:
+    0 10px 35px rgb(0 0 0 / 35%);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-smooth: 400ms cubic-bezier(.2, .8, .2, 1);
+}
+
+/* =========================================================
+   2. TAILWIND THEME
+   ========================================================= */
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 12px);
+
+  /* Animations */
+  --animate-spin-slow: spin-slow 20s linear infinite;
+  --animate-twinkle: twinkle 3s ease-in-out infinite;
+  --animate-rock-glow: rock-glow 2.5s ease-in-out infinite;
+  --animate-pulse-red: pulse-red 2s ease-in-out infinite;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-fade-up: fade-up 700ms ease-out both;
+
+  @keyframes spin-slow {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes twinkle {
+    0%, 100% {
+      opacity: .15;
+      transform: scale(1);
+    }
+    50% {
+      opacity: .8;
+      transform: scale(1.15);
+    }
+  }
+
+  @keyframes rock-glow {
+    0%, 100% {
+      box-shadow:
+        0 0 5px rgb(220 38 38 / 20%),
+        0 0 15px rgb(220 38 38 / 10%);
+    }
+    50% {
+      box-shadow:
+        0 0 12px rgb(220 38 38 / 45%),
+        0 0 30px rgb(220 38 38 / 25%);
+    }
+  }
+
+  @keyframes pulse-red {
+    0%, 100% {
+      opacity: 1;
+      filter: brightness(1);
+    }
+    50% {
+      opacity: .75;
+      filter: brightness(1.3);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* =========================================================
+   3. GLOBAL RESET & BASE
+   ========================================================= */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-color: var(--rock-red-dark) var(--rock-black);
+    scrollbar-width: thin;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+
+    min-height: 100vh;
+    margin: 0;
+    font-family: var(--font-geist-sans), Arial, sans-serif;
+    background-color: var(--rock-black);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    color: white;
+    background: rgb(220 38 38 / 75%);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
+  }
+
+  img {
+    display: block;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--rock-red-bright);
+    outline-offset: 4px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--rock-black);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--rock-red-dark);
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--rock-red);
+  }
+}
+
+/* =========================================================
+   4. TYPOGRAPHY
+   ========================================================= */
+
+.font-bbh {
+  font-family: "BBH Sans Bogle", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.font-bungee {
+  font-family: "Bungee Tint", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.font-londrina {
+  font-family: "Londrina Shadow", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* =========================================================
+   5. ROCK TEXT EFFECTS
+   ========================================================= */
+
+.text-rock-shadow {
+  text-shadow:
+    2px 2px 0 #000,
+    4px 4px 8px rgb(0 0 0 / 85%),
+    0 0 15px rgb(220 38 38 / 25%);
+}
+
+.text-neon-glow {
+  text-shadow:
+    0 0 5px rgb(255 48 48 / 90%),
+    0 0 12px rgb(255 48 48 / 65%),
+    0 0 25px rgb(220 38 38 / 45%);
+}
+
+.neon-red-border {
+  text-shadow:
+    0 0 5px #ff3030,
+    0 0 10px #ff3030,
+    0 0 20px #ff3030,
+    0 0 40px rgb(255 0 0 / 65%);
+}
+
+.text-gold-glow {
+  color: var(--rock-gold-light);
+  text-shadow:
+    0 0 5px rgb(245 216 120 / 70%),
+    0 0 15px rgb(212 175 55 / 40%);
+}
+
+.text-metallic {
+  color: transparent;
+  background: linear-gradient(
+    180deg,
+    #fff 0%,
+    #d5d5d5 35%,
+    #858585 55%,
+    #f5f5f5 75%,
+    #777 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* =========================================================
+   6. BACKGROUND EFFECTS
+   ========================================================= */
+
+.rock-background {
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgb(127 16 16 / 18%),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      #090909 0%,
+      #050505 55%,
+      #000 100%
+    );
+}
+
+.rock-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 2%) 1px, transparent 1px);
+  background-size: 45px 45px;
+}
+
+.rock-vignette {
+  position: relative;
+  isolation: isolate;
+}
+
+.rock-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgb(0 0 0 / 75%) 100%
+  );
+}
+
+/* =========================================================
+   7. PREMIUM CARDS
+   ========================================================= */
+
+.rock-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  background: linear-gradient(
+    145deg,
+    #181818,
+    #0a0a0a
+  );
+
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: var(--radius-xl);
+
+  box-shadow: var(--shadow-card);
+
+  transition:
+    transform var(--transition-smooth),
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.rock-card:hover {
+  transform: translateY(-5px);
+  border-color: rgb(220 38 38 / 50%);
+  box-shadow:
+    0 15px 40px rgb(0 0 0 / 50%),
+    0 0 20px rgb(220 38 38 / 10%);
+}
+
+.rock-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background: linear-gradient(
+    135deg,
+    rgb(220 38 38 / 8%),
+    transparent 45%
+  );
+
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.rock-card:hover::before {
+  opacity: 1;
+}
+
+/* =========================================================
+   8. BUTTON EFFECTS
+   ========================================================= */
+
+.rock-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+
+  padding: .8rem 1.5rem;
+
+  color: white;
+  font-weight: 700;
+  letter-spacing: .04em;
+
+  background: linear-gradient(
+    135deg,
+    #e32636,
+    #991b1b
+  );
+
+  border: 1px solid rgb(255 80 80 / 45%);
+  border-radius: var(--radius-md);
+
+  box-shadow:
+    0 4px 15px rgb(220 38 38 / 25%);
+
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-normal),
+    filter var(--transition-normal);
+}
+
+.rock-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+
+  box-shadow:
+    0 7px 25px rgb(220 38 38 / 35%),
+    0 0 15px rgb(220 38 38 / 20%);
+}
+
+.rock-button:active {
+  transform: translateY(0) scale(.97);
+}
+
+.rock-button-outline {
+  color: var(--rock-red-bright);
+  background: transparent;
+  border: 1px solid var(--rock-red);
+  box-shadow: inset 0 0 10px rgb(220 38 38 / 5%);
+  transition: all var(--transition-normal);
+}
+
+.rock-button-outline:hover {
+  color: white;
+  background: rgb(220 38 38 / 15%);
+  box-shadow: var(--shadow-red);
+}
+
+/* =========================================================
+   9. INPUTS
+   ========================================================= */
+
+.rock-input {
+  width: 100%;
+  padding: .85rem 1rem;
+
+  color: white;
+  background: var(--rock-surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+
+  outline: none;
+
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.rock-input::placeholder {
+  color: #777;
+}
+
+.rock-input:hover {
+  border-color: rgb(220 38 38 / 50%);
+}
+
+.rock-input:focus {
+  border-color: var(--rock-red);
+  box-shadow:
+    0 0 0 3px rgb(220 38 38 / 12%),
+    0 0 15px rgb(220 38 38 / 10%);
+}
+
+/* =========================================================
+   10. BORDERS & NEON
+   ========================================================= */
+
+.neon-border {
+  border: 1px solid rgb(220 38 38 / 70%);
+  box-shadow:
+    0 0 5px rgb(220 38 38 / 25%),
+    inset 0 0 5px rgb(220 38 38 / 10%);
+}
+
+.neon-border:hover {
+  border-color: var(--rock-red-bright);
+  box-shadow:
+    0 0 10px rgb(220 38 38 / 40%),
+    inset 0 0 10px rgb(220 38 38 / 10%);
+}
+
+.gold-border {
+  border: 1px solid rgb(212 175 55 / 55%);
+  box-shadow: var(--shadow-gold);
+}
+
+/* =========================================================
+   11. MARQUEE
+   ========================================================= */
+
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+  will-change: transform;
+}
+
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+.marquee-container {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-reverse {
+  animation-direction: reverse;
+}
+
+/* =========================================================
+   12. UTILITY EFFECTS
+   ========================================================= */
+
+.rock-glow {
+  animation: rock-glow 2.5s ease-in-out infinite;
+}
+
+.rock-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.rock-transition {
+  transition: all var(--transition-smooth);
+}
+
+.rock-hover-scale {
+  transition: transform var(--transition-normal);
+}
+
+.rock-hover-scale:hover {
+  transform: scale(1.04);
+}
+
+.rock-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(220 38 38 / 75%),
+    rgb(212 175 55 / 40%),
+    transparent
+  );
+}
+
+/* =========================================================
+   13. MOBILE OPTIMIZATION
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .rock-card:hover {
+    transform: none;
+  }
+
+  .rock-button:hover {
+    transform: none;
+  }
+
+  .text-neon-glow {
+    text-shadow:
+      0 0 5px rgb(255 48 48 / 60%),
+      0 0 10px rgb(255 48 48 / 35%);
+  }
+}
+
+/* =========================================================
+   14. PERFORMANCE & ACCESSIBILITY
+   ========================================================= */
+
+@media (hover: none) {
+  .rock-card:hover,
+  .rock-button:hover,
+  .rock-hover-scale:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .marquee {
+    animation: none !important;
+    transform: none !important;
+  }
+}

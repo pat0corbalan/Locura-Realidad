@@ -1,0 +1,46 @@
+import { v2 as cloudinary } from 'cloudinary';
+
+import { requireAdmin } from "@/lib/admin-auth";
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+export async function POST(req) {
+  const authError = requireAdmin(req);
+  if (authError) return authError;
+
+  const data = await req.formData();
+  const file = data.get('file');
+
+  if (!file) {
+    return new Response(JSON.stringify({ error: 'No se envió archivo' }), { status: 400 });
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  try {
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder: 'LocuraRealidad',
+          quality: 'auto',
+          fetch_format: 'auto', // puedes usar también format: 'auto'
+          transformation: [
+            { width: 1200, crop: 'limit' } // evita imágenes enormes
+          ]
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      ).end(buffer);
+    });
+
+    return Response.json({ url: result.secure_url });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+}
