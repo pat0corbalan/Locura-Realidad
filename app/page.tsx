@@ -509,12 +509,13 @@ export default function HomePage() {
           muted
           loop
           playsInline
-          preload="none"
+          webkit-playsinline="true"
+          preload="auto"
           poster="/images/rock-poster.jpg"
           className="absolute inset-0 h-full w-full object-cover"
         >
           <source
-            src="https://res.cloudinary.com/ddfojw7jj/video/upload/w_720,q_auto,f_auto/v1795029441/rock-background_vvsjt1.mp4"
+            src="https://res.cloudinary.com/ddfojw7jj/video/upload/w_720,q_auto/v1795029441/rock-background_vvsjt1.mp4"
             type="video/mp4"
           />
         </video>
