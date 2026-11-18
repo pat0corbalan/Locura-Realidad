@@ -1,27 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState, memo } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { X, Images } from "lucide-react"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-} from "@/components/ui/carousel"
+import { X, Images, MapPin, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { optimizeCloudinaryImage } from "@/utils/optimizeCloudinary"
 
-interface AlbumPhoto {
+export interface AlbumPhoto {
   src: string
   alt?: string
 }
 
-interface Album {
+export interface Album {
   _id: string
   title: string
   description?: string
@@ -30,131 +21,188 @@ interface Album {
 }
 
 /* ------------------------------------------------------------------ */
-/* Cantidad de álbumes por slide según el ancho de pantalla            */
-/* 1 en celular, 4 (2x2) en tablet, 6 (3x2) en escritorio              */
+/* Componente: Tarjeta de Álbum                                      */
 /* ------------------------------------------------------------------ */
-
-function useItemsPerSlide() {
-  const [items, setItems] = useState(6)
-
-  useEffect(() => {
-    const small = window.matchMedia("(max-width: 639px)")
-    const medium = window.matchMedia("(max-width: 1023px)")
-    const update = () => setItems(small.matches ? 1 : medium.matches ? 4 : 6)
-
-    update()
-    small.addEventListener("change", update)
-    medium.addEventListener("change", update)
-    return () => {
-      small.removeEventListener("change", update)
-      medium.removeEventListener("change", update)
-    }
-  }, [])
-
-  return items
+interface AlbumCardProps {
+  album: Album
+  onSelect: (album: Album) => void
 }
 
-function chunk<T>(list: T[], size: number): T[][] {
-  const groups: T[][] = []
-  for (let i = 0; i < list.length; i += size) groups.push(list.slice(i, i + size))
-  return groups
+const AlbumCard = memo(({ album, onSelect }: AlbumCardProps) => {
+  const photoCount = album.photos.length
+  const coverImage = album.photos[0]?.src
+
+  return (
+    <div
+      onClick={() => onSelect(album)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onSelect(album)}
+      aria-label={`Ver álbum ${album.title}, con ${photoCount} ${photoCount === 1 ? "foto" : "fotos"}`}
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-card border border-border/60 shadow-md transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-primary/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      {/* Contenedor de la Imagen: Usamos object-contain y un fondo sutil para CERO recortes */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-950/90 flex items-center justify-center">
+        {coverImage ? (
+          <img
+            src={optimizeCloudinaryImage(coverImage, { width: 800 })}
+            alt={album.title}
+            className="h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+            <Images className="h-10 w-10 opacity-40" />
+          </div>
+        )}
+
+        {/* Gradiente Inferior para que el texto resalte siempre */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none" />
+
+        {/* Badge de Fotos Flotante */}
+        <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg">
+          <Images className="h-3.5 w-3.5 text-primary-foreground" aria-hidden="true" />
+          <span>{photoCount}</span>
+        </div>
+
+        {/* Información del Álbum (Ubicación y Título) */}
+        <div className="absolute inset-x-0 bottom-0 p-4 text-white flex flex-col justify-end z-10">
+          {album.location && (
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-white/80 tracking-wide">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+              <span className="truncate">{album.location}</span>
+            </div>
+          )}
+          <h3 className="text-lg font-bold tracking-tight line-clamp-1 group-hover:text-primary-foreground transition-colors">
+            {album.title}
+          </h3>
+          {album.description && (
+            <p className="mt-0.5 text-xs text-white/70 line-clamp-1 font-normal">
+              {album.description}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
+
+AlbumCard.displayName = "AlbumCard"
+
+/* ------------------------------------------------------------------ */
+/* Componente: Visor Lightbox Inmersivo                                */
+/* ------------------------------------------------------------------ */
+interface AlbumViewerProps {
+  album: Album
+  onClose: () => void
 }
 
-/* ------------------------------------------------------------------ */
-/* Visor de fotos de un álbum                                          */
-/* ------------------------------------------------------------------ */
+function AlbumViewer({ album, onClose }: AlbumViewerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const photos = album.photos
+  const totalPhotos = photos.length
 
-function AlbumViewer({ album, onClose }: { album: Album; onClose: () => void }) {
-  const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(1)
-  const [count, setCount] = useState(album.photos.length)
-
-  // Contador "3 / 12"
   useEffect(() => {
-    if (!api) return
-    setCount(api.scrollSnapList().length)
-    setCurrent(api.selectedScrollSnap() + 1)
-    const onSelect = () => setCurrent(api.selectedScrollSnap() + 1)
-    api.on("select", onSelect)
-    return () => {
-      api.off("select", onSelect)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+      if (e.key === "ArrowLeft") setCurrentIndex((prev) => (prev > 0 ? prev - 1 : totalPhotos - 1))
+      if (e.key === "ArrowRight") setCurrentIndex((prev) => (prev < totalPhotos - 1 ? prev + 1 : 0))
     }
-  }, [api])
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [totalPhotos, onClose])
 
-  // Flechas del teclado funcionan aunque el foco esté en otro botón
-  useEffect(() => {
-    if (!api) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") api.scrollPrev()
-      if (e.key === "ArrowRight") api.scrollNext()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [api])
+  const nextPhoto = () => setCurrentIndex((prev) => (prev < totalPhotos - 1 ? prev + 1 : 0))
+  const prevPhoto = () => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : totalPhotos - 1))
 
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[9998] bg-black/90" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[9999] w-[95vw] max-w-5xl -translate-x-1/2 -translate-y-1/2 outline-none">
-          <div className="mb-3 flex items-start justify-between gap-4">
+        <Dialog.Overlay className="fixed inset-0 z-[9998] bg-black/95 backdrop-blur-md animate-in fade-in-0 duration-300" />
+        <Dialog.Content className="fixed inset-0 z-[9999] flex flex-col justify-between p-4 sm:p-6 outline-none">
+          
+          {/* Header del Lightbox */}
+          <div className="flex items-center justify-between gap-4 z-10 bg-black/50 p-4 rounded-2xl backdrop-blur-xl border border-white/10 max-w-6xl mx-auto w-full shadow-xl">
             <div>
-              <Dialog.Title className="text-xl font-bold text-white sm:text-2xl">
+              <Dialog.Title className="text-lg sm:text-xl font-bold tracking-tight text-white">
                 {album.title}
               </Dialog.Title>
-              <Dialog.Description className="text-white/80">
-                {[album.location, album.description].filter(Boolean).join(" · ") ||
-                  "Fotos del álbum"}
+              <Dialog.Description className="text-xs sm:text-sm text-white/70">
+                {[album.location, album.description].filter(Boolean).join(" · ") || "Álbum fotográfico"}
               </Dialog.Description>
             </div>
-            <Dialog.Close asChild>
+            
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold text-white/90 border border-white/10">
+                {currentIndex + 1} / {totalPhotos}
+              </span>
+              <Dialog.Close asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full bg-white/10 text-white hover:bg-white/20 hover:text-white transition-all"
+                  aria-label="Cerrar visor"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </Button>
+              </Dialog.Close>
+            </div>
+          </div>
+
+          {/* Visor de Imagen Central */}
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden my-4 px-2">
+            {totalPhotos > 1 && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0 bg-black/50 text-white hover:bg-black/70 hover:text-white"
-                aria-label="Cerrar galería"
+                onClick={prevPhoto}
+                className="absolute left-2 sm:left-8 z-20 h-12 w-12 rounded-full bg-black/60 text-white hover:bg-black/80 hover:text-white border border-white/10 transition-transform active:scale-95 shadow-lg"
+                aria-label="Foto anterior"
               >
-                <X className="h-6 w-6" aria-hidden="true" />
+                <ChevronLeft className="h-6 w-6" />
               </Button>
-            </Dialog.Close>
+            )}
+
+            <div className="relative max-h-[72vh] max-w-5xl flex items-center justify-center">
+              <img
+                src={optimizeCloudinaryImage(photos[currentIndex].src, { width: 1400 })}
+                alt={photos[currentIndex].alt || `${album.title} - Foto ${currentIndex + 1}`}
+                className="max-h-[72vh] max-w-full object-contain rounded-xl shadow-2xl select-none"
+                decoding="async"
+              />
+            </div>
+
+            {totalPhotos > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={nextPhoto}
+                className="absolute right-2 sm:right-8 z-20 h-12 w-12 rounded-full bg-black/60 text-white hover:bg-black/80 hover:text-white border border-white/10 transition-transform active:scale-95 shadow-lg"
+                aria-label="Foto siguiente"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            )}
           </div>
 
-          <Carousel
-            className="w-full"
-            opts={{ loop: true }}
-            setApi={setApi}
-            aria-label={`Fotos de ${album.title}`}
-          >
-            <CarouselContent>
-              {album.photos.map((photo, idx) => (
-                <CarouselItem key={idx} className="flex items-center justify-center">
-                  <img
-                    src={optimizeCloudinaryImage(photo.src, { width: 1200 })}
-                    alt={photo.alt || `${album.title}, foto ${idx + 1}`}
-                    className="max-h-[75dvh] max-w-full object-contain"
-                    loading={idx === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                  />
-                </CarouselItem>
+          {/* Tira de Miniaturas Inferiores */}
+          {totalPhotos > 1 && (
+            <div className="hidden sm:flex items-center justify-center gap-2 overflow-x-auto py-2 max-w-4xl mx-auto w-full">
+              {photos.map((photo, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg transition-all duration-300 ${
+                    currentIndex === idx ? "ring-2 ring-primary scale-105 opacity-100 shadow-lg" : "opacity-40 hover:opacity-80"
+                  }`}
+                >
+                  <img src={optimizeCloudinaryImage(photo.src, { width: 150 })} alt="" className="h-full w-full object-cover" />
+                </button>
               ))}
-            </CarouselContent>
+            </div>
+          )}
 
-            <CarouselPrevious
-              aria-label="Foto anterior"
-              className="left-2 z-10 border-white/30 bg-black/50 text-white hover:bg-black/70 hover:text-white"
-            />
-            <CarouselNext
-              aria-label="Foto siguiente"
-              className="right-2 z-10 border-white/30 bg-black/50 text-white hover:bg-black/70 hover:text-white"
-            />
-          </Carousel>
-
-          <p
-            className="mt-3 text-center text-sm text-white/80"
-            aria-live="polite"
-          >
-            {current} / {count}
-          </p>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -162,16 +210,14 @@ function AlbumViewer({ album, onClose }: { album: Album; onClose: () => void }) 
 }
 
 /* ------------------------------------------------------------------ */
-/* Galería                                                             */
+/* Componente Principal: PhotoGallery                                  */
 /* ------------------------------------------------------------------ */
-
 export function PhotoGallery() {
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
-  const itemsPerSlide = useItemsPerSlide()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -183,7 +229,7 @@ export function PhotoGallery() {
         const res = await fetch("/api/albums", { signal: controller.signal })
         if (!res.ok) throw new Error("Error al cargar álbumes")
         const data: unknown = await res.json()
-        // Solo álbumes con al menos una foto (antes uno vacío rompía la portada)
+        
         setAlbums(
           Array.isArray(data)
             ? (data as Album[]).filter((a) => a.photos?.length > 0)
@@ -192,7 +238,7 @@ export function PhotoGallery() {
       } catch (err) {
         if ((err as Error).name === "AbortError") return
         console.error("Error al cargar álbumes:", err)
-        setError("No pudimos cargar la galería. Intentá de nuevo.")
+        setError("No pudimos cargar la galería en este momento. Por favor, intentá de nuevo.")
       } finally {
         setLoading(false)
       }
@@ -202,20 +248,12 @@ export function PhotoGallery() {
     return () => controller.abort()
   }, [reloadKey])
 
-  const groups = useMemo(
-    () => chunk<Album | null>(albums, itemsPerSlide),
-    [albums, itemsPerSlide]
-  )
-
-  const gridCols =
-    itemsPerSlide === 1 ? "grid-cols-1" : itemsPerSlide === 4 ? "grid-cols-2" : "grid-cols-3"
-
   if (error) {
     return (
-      <div role="alert" className="py-10 text-center">
-        <p className="mb-4 text-destructive">{error}</p>
-        <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
-          Reintentar
+      <div role="alert" className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="mb-4 text-sm text-destructive font-medium">{error}</p>
+        <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)}>
+          Reintentar conexión
         </Button>
       </div>
     )
@@ -223,94 +261,40 @@ export function PhotoGallery() {
 
   if (!loading && albums.length === 0) {
     return (
-      <p role="status" className="py-10 text-center text-muted-foreground">
-        Todavía no hay álbumes. ¡Pronto vamos a subir fotos de nuestros viajes!
-      </p>
+      <div role="status" className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="rounded-full bg-muted p-4 mb-3">
+          <Sparkles className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-medium text-muted-foreground">
+          Todavía no hay álbumes publicados. ¡Pronto subiremos nuevas historias!
+        </p>
+      </div>
     )
   }
 
   return (
-    <>
-      <p className="mb-4 text-center text-sm text-muted-foreground motion-safe:animate-pulse md:hidden">
-        Deslizá para ver más álbumes →
-      </p>
-
-      <Carousel className="w-full cursor-grab active:cursor-grabbing" aria-label="Álbumes de fotos">
-        <CarouselContent>
-          {loading ? (
-            <CarouselItem className="px-1 md:px-2">
-              <div className={`grid gap-4 ${gridCols}`} role="status" aria-label="Cargando álbumes">
-                {Array.from({ length: itemsPerSlide }).map((_, i) => (
-                  <Card
-                    key={i}
-                    className="border-border bg-card p-4 motion-safe:animate-pulse"
-                  >
-                    <Skeleton className="mb-2 h-48 w-full rounded-md bg-muted" />
-                    <Skeleton className="mb-1 h-5 w-3/4 bg-muted" />
-                    <Skeleton className="h-4 w-1/2 bg-muted" />
-                  </Card>
-                ))}
-              </div>
-            </CarouselItem>
-          ) : (
-            groups.map((group, groupIndex) => (
-              <CarouselItem key={groupIndex} className="px-1 md:px-2">
-                <div className={`grid gap-4 ${gridCols}`}>
-                  {group.map(
-                    (album) =>
-                      album && (
-                        <Card
-                          key={album._id}
-                          className="group overflow-hidden border-border bg-card transition-all duration-300 hover:border-primary/50"
-                        >
-                          {/* Un <button> real: se puede usar con teclado */}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedAlbum(album)}
-                            aria-label={`Ver álbum ${album.title}, ${album.photos.length} ${
-                              album.photos.length === 1 ? "foto" : "fotos"
-                            }`}
-                            className="relative block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-                          >
-                            <img
-                              src={optimizeCloudinaryImage(album.photos[0].src, {
-                                width: 600,
-                              })}
-                              alt=""
-                              className="h-48 w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white">
-                              <Images className="h-3 w-3" aria-hidden="true" />
-                              {album.photos.length}
-                            </span>
-                            <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 to-transparent p-4">
-                              <span className="block text-lg font-semibold text-white">
-                                {album.title}
-                              </span>
-                              {album.location && (
-                                <span className="block text-sm text-white/80">
-                                  {album.location}
-                                </span>
-                              )}
-                            </span>
-                          </button>
-                        </Card>
-                      )
-                  )}
-                </div>
-              </CarouselItem>
-            ))
-          )}
-        </CarouselContent>
-        <CarouselPrevious aria-label="Álbumes anteriores" />
-        <CarouselNext aria-label="Álbumes siguientes" />
-      </Carousel>
+    <div className="w-full space-y-6">
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="status" aria-label="Cargando álbumes">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col space-y-3 p-4 rounded-2xl border border-border/60 bg-card shadow-sm">
+              <Skeleton className="h-48 w-full rounded-xl bg-muted" />
+              <Skeleton className="h-5 w-3/4 bg-muted" />
+              <Skeleton className="h-4 w-1/2 bg-muted" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {albums.map((album) => (
+            <AlbumCard key={album._id} album={album} onSelect={setSelectedAlbum} />
+          ))}
+        </div>
+      )}
 
       {selectedAlbum && (
         <AlbumViewer album={selectedAlbum} onClose={() => setSelectedAlbum(null)} />
       )}
-    </>
+    </div>
   )
 }

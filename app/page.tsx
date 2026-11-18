@@ -756,13 +756,17 @@ export default function HomePage() {
           aria-labelledby="galeria-title"
           className="relative z-10 scroll-mt-24 bg-card/30 px-4 py-24"
         >
-          <div className="container mx-auto">
+          <div className="container mx-auto max-w-7xl">
             <SectionHeading
               eyebrow="Momentos que quedan"
               title="Esto también es rock"
               description="Cada ruta, cada show y cada encuentro suma una historia. Acá guardamos algunos de esos recuerdos."
             />
-            <PhotoGallery />
+            
+            {/* Contenedor con margen superior para separar cleanly el título de la grilla */}
+            <div className="mt-12">
+              <PhotoGallery />
+            </div>
           </div>
         </section>
 
