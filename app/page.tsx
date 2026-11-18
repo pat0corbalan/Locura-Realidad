@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,17 @@ import {
   Twitter,
   Menu,
   X,
-  BusIcon,
+  Bus,
   CreditCard,
   Handshake,
   CalendarDays,
   MessageCircle,
+  ArrowUpRight,
+  ArrowRight,
+  Sparkles,
+  Disc3,
+  Ticket,
+  MoveDown,
 } from "lucide-react";
 import { PhotoGallery } from "@/components/photo-gallery-album";
 import { ShoppingCartButton } from "@/components/shopping-cart";
@@ -34,10 +40,6 @@ import {
 } from "@/components/rock-visual-elements";
 import { Tour } from "@/components/types/tour";
 import { ReservaModal, type ReservaItem } from "@/components/reserva-modal";
-
-/* ------------------------------------------------------------------ */
-/* Constantes                                                          */
-/* ------------------------------------------------------------------ */
 
 const SITE_URL = "https://locura-realidad.vercel.app/";
 const WHATSAPP_URL =
@@ -61,21 +63,24 @@ const SOCIALS = [
 const BENEFICIOS = [
   {
     icon: Handshake,
+    number: "01",
     title: "Atención directa",
     description:
-      "Escribinos por WhatsApp o por nuestras redes y te respondemos personalmente.",
+      "Escribinos por WhatsApp o por nuestras redes. Del otro lado hay personas, no respuestas automáticas.",
   },
   {
-    icon: BusIcon,
-    title: "Viajes todo el año",
+    icon: Bus,
+    number: "02",
+    title: "La ruta nos une",
     description:
-      "Todos los meses hay fechas disponibles para reservar tu lugar.",
+      "Organizamos viajes durante todo el año para que puedas estar cerca de la música que te mueve.",
   },
   {
     icon: CreditCard,
-    title: "Pagá como prefieras",
+    number: "03",
+    title: "Pagá a tu manera",
     description:
-      "Aceptamos todos los medios de pago. 10% de descuento si abonás por transferencia.",
+      "Elegí el medio de pago que te resulte más cómodo. Tenés 10% de descuento abonando por transferencia.",
   },
 ];
 
@@ -96,10 +101,6 @@ const JSON_LD = {
   sameAs: SOCIALS.map((s) => s.href),
 };
 
-/* ------------------------------------------------------------------ */
-/* Tipos y helpers                                                     */
-/* ------------------------------------------------------------------ */
-
 interface Evento {
   _id: string;
   titulo: string;
@@ -112,12 +113,55 @@ interface Evento {
 function formatFecha(fecha: string) {
   const d = new Date(fecha);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("es-AR", { day: "numeric", month: "long" });
+  return d.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+  });
 }
 
-/* ------------------------------------------------------------------ */
-/* Página                                                              */
-/* ------------------------------------------------------------------ */
+function Eyebrow({
+  children,
+  light = false,
+}: {
+  children: React.ReactNode;
+  light?: boolean;
+}) {
+  return (
+    <div
+      className={`mb-5 inline-flex items-center gap-3 text-[10px] font-extrabold uppercase tracking-[0.28em] ${
+        light ? "text-red-300" : "text-primary"
+      }`}
+    >
+      <span className="h-px w-8 bg-current" />
+      {children}
+    </div>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className="mx-auto mb-12 max-w-3xl text-center">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2
+        className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground sm:text-5xl md:text-6xl"
+        style={{ fontFamily: "var(--font-londrina)" }}
+      >
+        {title}
+      </h2>
+      <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+        {description}
+      </p>
+    </header>
+  );
+}
 
 export default function HomePage() {
   const [tours, setTours] = useState<Tour[]>([]);
@@ -132,11 +176,10 @@ export default function HomePage() {
   const [reserva, setReserva] = useState<ReservaItem | null>(null);
 
   const eventosActivos = useMemo(
-    () => eventos.filter((e) => e.activo),
+    () => eventos.filter((evento) => evento.activo),
     [eventos]
   );
 
-  // El link a Eventos solo aparece si realmente hay eventos
   const navLinks = useMemo(
     () => [
       { id: "tours", label: "Viajes" },
@@ -165,9 +208,11 @@ export default function HomePage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/tours", { signal: controller.signal });
-        if (!res.ok) throw new Error("No se pudieron cargar los viajes.");
-        setTours(await res.json());
+        const response = await fetch("/api/tours", {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("No se pudieron cargar los viajes.");
+        setTours(await response.json());
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         setError(
@@ -180,8 +225,10 @@ export default function HomePage() {
 
     async function fetchEventos() {
       try {
-        const res = await fetch("/api/eventos", { signal: controller.signal });
-        if (res.ok) setEventos(await res.json());
+        const response = await fetch("/api/eventos", {
+          signal: controller.signal,
+        });
+        if (response.ok) setEventos(await response.json());
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           console.error("Error cargando eventos:", err);
@@ -196,22 +243,20 @@ export default function HomePage() {
     return () => controller.abort();
   }, []);
 
-  // Cerrar el menú móvil con Escape
   useEffect(() => {
     if (!mobileMenuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Accesibilidad: saltar al contenido */}
+    <div className="relative min-h-screen overflow-x-clip bg-background text-foreground">
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground"
       >
         Saltar al contenido
       </a>
@@ -219,154 +264,377 @@ export default function HomePage() {
       <FloatingRockIcons />
       <RockPatternBackground />
 
-      {/* Datos estructurados para SEO */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
 
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} />
-
       <ReservaModal
         open={reservaOpen}
         onOpenChange={setReservaOpen}
         item={reserva}
       />
 
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/70 backdrop-blur-md">
-        <div className="container mx-auto px-4 py-4">
+      {/* Navegación */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#090909]/90 text-white shadow-[0_8px_35px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
+          <a
+            href="#inicio"
+            className="group flex items-center gap-3"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Locura y Realidad, inicio"
+          >
+            {/* <span className="flex h-10 w-10 items-center justify-center border border-red-500/40 bg-red-500/10 text-red-500 transition-colors group-hover:bg-red-600 group-hover:text-white">
+              <Guitar className="h-5 w-5" />
+            </span> */}
+            <span
+              className="text-xl font-black uppercase leading-none tracking-tight sm:text-2xl"
+              style={{ fontFamily: "var(--font-bbh)" }}
+            >
+              Locura <span className="text-red-500">&</span>
+              <br />
+              <span className="text-white/65">Realidad</span>
+            </span>
+          </a>
+
           <nav
-            className="flex items-center justify-between"
+            className="hidden items-center gap-7 lg:flex"
             aria-label="Navegación principal"
           >
-            <a
-              href="#inicio"
-              className="text-2xl font-bold text-foreground text-rock-shadow"
-              style={{ fontFamily: "var(--font-bbh)" }}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Locura{" "}
-              <span
-                className="text-black"
-                style={{
-                  textShadow:
-                    "0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000",
-                }}
+            {navLinks.map(({ id, label }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/65 transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
-                &amp;
-              </span>{" "}
-              Realidad
-            </a>
-
-            <div className="hidden items-center space-x-6 md:flex">
-              {navLinks.map(({ id, label }) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className="text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-                >
-                  {label}
-                </a>
-              ))}
-              <ShoppingCartButton
-                open={cartOpen}
-                onOpenChange={setCartOpen}
-                onCheckout={() => setCheckoutOpen(true)}
-              />
-            </div>
-
-            <div className="flex items-center space-x-4 md:hidden">
-              <ShoppingCartButton
-                open={cartOpen}
-                onOpenChange={setCartOpen}
-                onCheckout={() => setCheckoutOpen(true)}
-              />
-              <button
-                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-                aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-menu"
-                className="rounded-md p-2 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                onClick={() => setMobileMenuOpen((v) => !v)}
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6 text-foreground" />
-                ) : (
-                  <Menu className="h-6 w-6 text-foreground" />
-                )}
-              </button>
-            </div>
+                {label}
+              </a>
+            ))}
+            <ShoppingCartButton
+              open={cartOpen}
+              onOpenChange={setCartOpen}
+              onCheckout={() => setCheckoutOpen(true)}
+            />
           </nav>
 
-          {mobileMenuOpen && (
-            <div
-              id="mobile-menu"
-              className="mt-4 flex flex-col space-y-4 text-center md:hidden"
+          <div className="flex items-center gap-3 lg:hidden">
+            <ShoppingCartButton
+              open={cartOpen}
+              onOpenChange={setCartOpen}
+              onCheckout={() => setCheckoutOpen(true)}
+            />
+            <button
+              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+              className="flex h-10 w-10 items-center justify-center border border-white/15 text-white transition-colors hover:border-red-500 hover:bg-red-500/10"
+              onClick={() => setMobileMenuOpen((value) => !value)}
             >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <nav
+            id="mobile-menu"
+            className="border-t border-white/10 bg-[#090909] px-5 py-5 lg:hidden"
+            aria-label="Menú móvil"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col gap-1">
               {navLinks.map(({ id, label }) => (
                 <a
                   key={id}
                   href={`#${id}`}
-                  className="text-lg font-semibold text-foreground transition-colors hover:text-primary"
+                  className="border-b border-white/[0.07] py-3 text-sm font-bold uppercase tracking-[0.15em] text-white/75 transition-colors hover:text-red-400"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {label}
                 </a>
               ))}
             </div>
-          )}
-        </div>
+          </nav>
+        )}
       </header>
 
       <main id="contenido">
-        {/* HERO */}
-        <section
-          id="inicio"
-          className="relative z-10 scroll-mt-24 px-4 py-32 text-center md:py-40"
+        {/* Hero */}
+        
+<section
+  id="inicio"
+  className="relative isolate min-h-[760px] scroll-mt-24 overflow-hidden bg-[#070707] text-white sm:min-h-[850px]"
+>
+  {/* BACKGROUND */}
+  <div className="pointer-events-none absolute inset-0">
+    <div className="absolute -left-64 -top-40 h-[650px] w-[650px] rounded-full bg-red-800/15 blur-[160px]" />
+    <div className="absolute -bottom-64 right-[-10%] h-[600px] w-[600px] rounded-full bg-red-700/10 blur-[170px]" />
+
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_75%_45%,rgba(127,29,29,.13),transparent_45%)]" />
+
+    <div
+      className="absolute inset-0 opacity-[0.035]"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.2) 1px,transparent 1px)",
+        backgroundSize: "80px 80px",
+      }}
+    />
+
+    <div className="absolute bottom-0 h-px w-full bg-gradient-to-r from-transparent via-red-600/60 to-transparent" />
+  </div>
+
+  {/* MAIN CONTENT */}
+  <div className="relative mx-auto flex min-h-[760px] max-w-[1440px] flex-col justify-center px-5 pb-10 pt-28 sm:min-h-[850px] sm:px-8 lg:px-12 lg:pt-24">
+
+    <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-12">
+
+      {/* LEFT: COPY */}
+      <div className="relative z-10">
+
+        {/* EYEBROW */}
+        <div className="mb-8 inline-flex items-center gap-3 border border-red-500/20 bg-red-950/20 px-4 py-2.5">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-red-500 opacity-60" />
+            <span className="relative h-2 w-2 rounded-full bg-red-500" />
+          </span>
+
+          <span className="text-[9px] font-black uppercase tracking-[.27em] text-white/75 sm:text-[10px]">
+            Viajes · Música · Experiencias
+          </span>
+        </div>
+
+        {/* HEADLINE */}
+        <h1
+          className="max-w-4xl text-[clamp(4.5rem,9.2vw,8.7rem)] font-black uppercase leading-[.76] tracking-[-.055em]"
+          style={{ fontFamily: "var(--font-londrina)" }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
-          <div className="container relative z-10 mx-auto">
-            <div className="mb-6 flex items-center justify-center">
-              <Music
-                aria-hidden="true"
-                className="mr-4 h-12 w-12 text-primary motion-safe:animate-pulse"
-              />
-              <h1
-                className="text-5xl font-bold text-foreground text-neon-glow md:text-8xl"
-                style={{ fontFamily: "var(--font-londrina)" }}
-              >
-                LOCURA <span className="text-black neon-red-border">&amp;</span>{" "}
-                <span className="text-primary">REALIDAD</span>
-              </h1>
+          VIVÍ
+          <br />
+          LA MÚSICA.
+          <br />
+
+          <span className="text-transparent [-webkit-text-stroke:1.5px_rgba(255,255,255,.85)]">
+            SENTÍ
+          </span>
+          <br />
+
+          <span className="relative inline-block text-red-600">
+            EL ROCK.
+            <span className="absolute -bottom-2 left-1 h-[3px] w-2/3 bg-red-600/80" />
+          </span>
+        </h1>
+
+        {/* BRAND LINE */}
+        <div className="mt-9 flex items-center gap-4">
+          <span className="h-[2px] w-12 bg-red-600" />
+          <span className="text-[9px] font-black uppercase tracking-[.28em] text-white/45 sm:text-[10px]">
+            Locura & Realidad
+          </span>
+          <span className="h-1 w-1 rounded-full bg-red-600" />
+          <span className="text-[9px] font-bold uppercase tracking-[.2em] text-white/35 sm:text-[10px]">
+            Desde 2022
+          </span>
+        </div>
+
+        {/* DESCRIPTION */}
+        <p className="mt-8 max-w-[530px] text-[14px] leading-[1.9] text-white/55 sm:text-base sm:leading-8">
+          No somos solamente un viaje. Somos el camino hacia ese recital
+          que tanto esperás. Salimos desde Santiago del Estero para vivir
+          la música como se merece: juntos, cerca y a todo volumen.
+        </p>
+
+        {/* ACTIONS */}
+        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+
+          <Button
+            size="lg"
+            className="group h-14 rounded-none bg-red-600 px-7 text-[10px] font-black uppercase tracking-[.16em] text-white shadow-[0_12px_40px_rgba(220,38,38,.2)] transition-all duration-300 hover:-translate-y-1 hover:bg-red-700 hover:shadow-[0_16px_50px_rgba(220,38,38,.35)]"
+            onClick={() => scrollTo("tours")}
+          >
+            Descubrí los próximos viajes
+            <ArrowRight className="ml-4 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="lg"
+            asChild
+            className="h-14 rounded-none border-white/15 bg-white/[0.025] px-7 text-[10px] font-black uppercase tracking-[.16em] text-white transition-all duration-300 hover:border-red-500/60 hover:bg-red-500/10 hover:text-white"
+          >
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="mr-3 h-4 w-4 text-red-500" />
+              Hablemos
+            </a>
+          </Button>
+        </div>
+
+        {/* LOCATION */}
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-[9px] font-bold uppercase tracking-[.17em] text-white/35 sm:text-[10px]">
+          <span className="inline-flex items-center gap-2.5">
+            <MapPin className="h-4 w-4 text-red-500" />
+            Santiago del Estero, Argentina
+          </span>
+
+          <span className="hidden h-1 w-1 rounded-full bg-red-600 sm:block" />
+
+          <span>La ruta es parte del show</span>
+        </div>
+      </div>
+
+      {/* RIGHT: CINEMATIC VIDEO */}
+      <div className="relative mx-auto w-full max-w-[520px] lg:ml-auto">
+
+        {/* RED GLOW */}
+        <div className="absolute inset-8 rounded-full bg-red-700/20 blur-[100px]" />
+
+        {/* CORNER DETAILS */}
+        <div className="absolute -right-4 -top-4 z-20 hidden h-24 w-24 border-r border-t border-red-500/50 sm:block" />
+        <div className="absolute -bottom-4 -left-4 z-20 hidden h-24 w-24 border-b border-l border-red-500/50 sm:block" />
+
+        {/* VIDEO FRAME */}
+        <div className="relative aspect-[4/5] overflow-hidden border border-white/15 bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.65)]">
+
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="/images/rock-poster.jpg"
+            className="absolute inset-0 h-full w-full object-cover"
+          >
+            <source
+              src="/videos/rock-background.mp4"
+              type="video/mp4"
+            />
+          </video>
+
+          {/* CINEMATIC OVERLAYS */}
+          <div className="absolute inset-0 bg-black/30" />
+
+          <div className="absolute inset-0 bg-gradient-to-br from-red-950/45 via-transparent to-black/80" />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-black/20" />
+
+          {/* SUBTLE TEXTURE */}
+          <div
+            className="absolute inset-0 opacity-[0.12]"
+            style={{
+              backgroundImage:
+                "linear-gradient(135deg,transparent 48%,rgba(255,255,255,.15) 49%,transparent 50%)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+
+          {/* TOP LABEL */}
+          <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="h-2 w-2 bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" />
+              <span className="text-[9px] font-black uppercase tracking-[.28em] text-white/80">
+                Locura & Realidad
+              </span>
             </div>
-            <p className="mx-auto mb-3 max-w-3xl text-xl text-muted-foreground md:text-2xl">
-              Viajes a recitales desde Santiago del Estero.
-            </p>
-            <p className="mb-8 text-sm text-muted-foreground">
-              Viajando con la gente del rock desde el 23 de marzo de 2022
-            </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="px-8 py-6 text-lg motion-safe:animate-rock-glow"
-                onClick={() => scrollTo("tours")}
-              >
-                Ver próximos viajes
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="bg-transparent px-8 py-6 text-lg"
-                asChild
-              >
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-5 w-5" aria-hidden="true" />
-                  Consultanos por WhatsApp
-                </a>
-              </Button>
+
+            <span className="border border-white/15 bg-black/20 px-3 py-1.5 text-[8px] font-bold uppercase tracking-[.2em] text-white/65 backdrop-blur-md">
+              Desde el 2022
+            </span>
+          </div>
+
+          {/* CENTRAL GRAPHIC */}
+          <div className="absolute inset-0 flex items-center justify-center">
+
+            <div className="relative flex h-64 w-64 items-center justify-center rounded-full border border-white/10 bg-black/10 backdrop-blur-[1px] sm:h-72 sm:w-72">
+
+              <div className="absolute inset-5 rounded-full border border-white/10" />
+
+              <div className="absolute inset-10 rounded-full border border-red-500/25" />
+
+              <div className="absolute inset-0 rounded-full bg-red-600/[0.035] blur-xl" />
+
+              <Disc3
+                className="absolute h-52 w-52 text-white/[0.10] sm:h-60 sm:w-60"
+                strokeWidth={0.45}
+              />
+
+              {/* <Music
+                className="relative z-10 h-36 w-36 -rotate-[18deg] text-red-400/90 drop-shadow-[0_0_35px_rgba(239,68,68,.5)] sm:h-44 sm:w-44"
+                strokeWidth={0.65}
+              /> */}
             </div>
           </div>
-        </section>
+
+          {/* BOTTOM CONTENT */}
+          <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-9">
+
+            <div className="mb-4 flex items-center gap-3">
+              <span className="h-px w-8 bg-red-500" />
+              <span className="text-[9px] font-black uppercase tracking-[.3em] text-white/65">
+                Más que un tour
+              </span>
+            </div>
+
+            <p
+              className="text-5xl font-black uppercase leading-[.83] tracking-[-.035em] text-white sm:text-6xl"
+              style={{ fontFamily: "var(--font-londrina)" }}
+            >
+              UNA PASIÓN
+              <br />
+              <span className="text-red-500">
+                QUE NOS UNE.
+              </span>
+            </p>
+
+            <div className="mt-6 h-px w-full bg-white/15" />
+
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[8px] font-bold uppercase tracking-[.24em] text-white/45">
+                Desde Santiago para todo el rock
+              </span>
+
+              <Music className="h-4 w-4 text-red-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* EXTERNAL LABEL */}
+        <div className="mt-6 flex items-center justify-end gap-3 text-[9px] font-black uppercase tracking-[.24em] text-white/30">
+          <span className="h-px w-10 bg-red-600" />
+          La música nos mueve
+        </div>
+      </div>
+    </div>
+
+    {/* BOTTOM FOOTER */}
+    <div className="mt-16 flex items-center justify-between border-t border-white/10 pt-6 sm:mt-20">
+
+      <div className="flex items-center gap-3">
+        <span className="h-[2px] w-8 bg-red-600" />
+        <span className="text-[8px] font-bold uppercase tracking-[.22em] text-white/30 sm:text-[9px]">
+          No importa el destino. Importa lo que vivimos.
+        </span>
+      </div>
+
+      <button
+        onClick={() => scrollTo("tours")}
+        className="group inline-flex items-center gap-3 text-[9px] font-black uppercase tracking-[.2em] text-white/55 transition-colors hover:text-white"
+      >
+        Explorá
+        <MoveDown className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-y-1" />
+      </button>
+    </div>
+
+  </div>
+</section>
+
 
         <SpotifyWidget
           playlistId="2ZFNwdOcz8zLKz0R4xZKUS"
@@ -374,29 +642,25 @@ export default function HomePage() {
           theme={0}
         />
 
-        <SectionDivider variant="guitar" />
+        {/* <SectionDivider variant="guitar" /> */}
 
-        {/* VIAJES */}
+        {/* Viajes */}
         <section
           id="tours"
           aria-labelledby="tours-title"
-          className="relative z-10 scroll-mt-24 overflow-hidden py-16"
+          className="relative z-10 scroll-mt-24 overflow-hidden py-24"
         >
-          <div className="container mx-auto">
-            <header className="mb-12 px-4 text-center">
-              <h2
-                id="tours-title"
-                className="mb-4 text-4xl font-bold text-foreground text-rock-shadow"
-              >
-                Viajes disponibles
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Traslado de ida y vuelta. La entrada al recital es opcional.
-              </p>
-            </header>
-            <p className="mb-4 text-center text-sm text-muted-foreground motion-safe:animate-pulse md:hidden">
-              Deslizá para ver más viajes →
-            </p>
+          <div className="container mx-auto px-4">
+            <SectionHeading
+              eyebrow="El próximo destino te espera"
+              title="Subite a la ruta"
+              description="Encontrá tu próximo recital. Nos ocupamos del viaje de ida y vuelta para que vos te concentres en disfrutar."
+            />
+            <div className="mb-5 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[.18em] text-muted-foreground md:hidden">
+              <span className="h-px w-6 bg-primary" />
+              Deslizá para ver más viajes
+              <span className="h-px w-6 bg-primary" />
+            </div>
             <TourList
               tours={tours}
               loading={loading}
@@ -408,234 +672,249 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* EVENTOS / TICKETS QR: solo si hay eventos activos */}
-        {/* {!loadingEventos && eventosActivos.length > 0 && (
+        {/* Eventos */}
+        {!loadingEventos && eventosActivos.length > 0 && (
           <section
             id="eventos"
             aria-labelledby="eventos-title"
-            className="relative z-10 scroll-mt-24 border-y border-primary/20 bg-primary/5 px-4 py-16"
+            className="relative z-10 scroll-mt-24 border-y border-primary/20 bg-[#0b0b0b] px-4 py-24 text-white"
           >
             <div className="container mx-auto">
-              <header className="mb-12 text-center">
-                <div className="mb-4 inline-block rounded-full bg-primary/10 p-3">
-                  <Music className="h-8 w-8 text-primary" aria-hidden="true" />
-                </div>
-                <h2
-                  id="eventos-title"
-                  className="mb-4 text-4xl font-bold text-foreground text-rock-shadow"
-                >
-                  Eventos y tickets
-                </h2>
-                <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                  Comprá tu entrada anticipada para nuestros eventos locales y
-                  recibí tu{" "}
-                  <span className="font-bold text-foreground">acceso QR</span> al
-                  instante.
-                </p>
-              </header>
-
-              <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <SectionHeading
+                eyebrow="Nos encontramos ahí"
+                title="Eventos y entradas"
+                description="Viví de cerca nuestros encuentros. Elegí tu evento y asegurá tu lugar."
+              />
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {eventosActivos.map((evento) => {
                   const fecha = formatFecha(evento.fecha);
                   return (
-                    <li
+                    <article
                       key={evento._id}
-                      className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-lg transition-all hover:border-primary"
+                      className="group relative overflow-hidden border border-white/10 bg-[#111] transition-all duration-300 hover:-translate-y-1 hover:border-red-500/50"
                     >
-                      <div className="relative aspect-video overflow-hidden bg-muted">
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 transition-transform duration-500 motion-safe:group-hover:scale-110">
-                          <Guitar
-                            className="h-12 w-12 text-primary/50"
-                            aria-hidden="true"
-                          />
-                        </div>
-                        <span className="absolute left-2 top-2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                      <div className="relative flex aspect-[16/8] items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_center,rgba(185,28,28,.28),transparent_65%),#171010]">
+                        <Guitar className="h-20 w-20 text-red-500/30 transition-transform duration-500 group-hover:scale-110" strokeWidth={0.7} />
+                        <span className="absolute left-5 top-5 inline-flex items-center gap-2 border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[.2em] text-red-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                           Confirmado
                         </span>
                       </div>
-
                       <div className="p-6">
-                        <h3 className="mb-3 text-xl font-bold">
+                        <h3 className="text-2xl font-black uppercase tracking-tight">
                           {evento.titulo}
                         </h3>
-                        <div className="mb-6 space-y-2">
+                        <div className="mt-5 space-y-3 text-sm text-white/55">
                           {fecha && (
-                            <p className="flex items-center text-sm text-muted-foreground">
-                              <CalendarDays
-                                className="mr-2 h-4 w-4 text-primary"
-                                aria-hidden="true"
-                              />
+                            <p className="flex items-center gap-3">
+                              <CalendarDays className="h-4 w-4 text-red-500" />
                               {fecha}
                             </p>
                           )}
-                          <p className="flex items-center text-sm text-muted-foreground">
-                            <MapPin
-                              className="mr-2 h-4 w-4 text-primary"
-                              aria-hidden="true"
-                            />
+                          <p className="flex items-center gap-3">
+                            <MapPin className="h-4 w-4 text-red-500" />
                             {evento.lugar}
                           </p>
-                          <p className="text-2xl font-black text-primary">
-                            ${evento.precio.toLocaleString("es-AR")}
-                          </p>
                         </div>
-
-                        <Button
-                          className="w-full py-6 font-bold"
-                          onClick={() =>
-                            handleReservar({ title: evento.titulo, tipo: "ticket" })
-                          }
-                        >
-                          Comprar ticket QR
-                        </Button>
+                        <div className="mt-6 flex items-end justify-between border-t border-white/10 pt-5">
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-[.2em] text-white/35">
+                              Entrada
+                            </p>
+                            <p className="mt-1 text-2xl font-black text-white">
+                              ${evento.precio.toLocaleString("es-AR")}
+                            </p>
+                          </div>
+                          <Button
+                            className="rounded-none bg-red-600 px-5 text-[10px] font-black uppercase tracking-[.12em] text-white hover:bg-red-700"
+                            onClick={() =>
+                              handleReservar({
+                                title: evento.titulo,
+                                tipo: "ticket",
+                              })
+                            }
+                          >
+                            <Ticket className="mr-2 h-4 w-4" />
+                            Comprar
+                          </Button>
+                        </div>
                       </div>
-                    </li>
+                    </article>
                   );
                 })}
-              </ul>
+              </div>
             </div>
           </section>
-        )} */}
+        )}
 
         <RockQuote />
+        {/* <SectionDivider variant="vinyl" /> */}
 
-        <SectionDivider variant="vinyl" />
-
-        {/* GALERÍA */}
+        {/* Galería */}
         <section
           id="galeria"
           aria-labelledby="galeria-title"
-          className="relative z-10 scroll-mt-24 bg-card/30 px-4 py-16"
+          className="relative z-10 scroll-mt-24 bg-card/30 px-4 py-24"
         >
           <div className="container mx-auto">
-            <header className="mb-12 text-center">
-              <h2
-                id="galeria-title"
-                className="mb-4 text-4xl font-bold text-foreground text-rock-shadow"
-              >
-                Galería de momentos
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                Reviví algunos de los viajes y eventos de estos años.
-              </p>
-            </header>
+            <SectionHeading
+              eyebrow="Momentos que quedan"
+              title="Esto también es rock"
+              description="Cada ruta, cada show y cada encuentro suma una historia. Acá guardamos algunos de esos recuerdos."
+            />
             <PhotoGallery />
           </div>
         </section>
 
-        <SectionDivider variant="lightning" />
+        {/* <SectionDivider variant="lightning" /> */}
 
-        {/* TIENDA */}
+        {/* Tienda */}
         <section
           id="tienda"
           aria-labelledby="tienda-title"
-          className="relative z-10 scroll-mt-24 overflow-hidden py-16"
+          className="relative z-10 scroll-mt-24 overflow-hidden py-24"
         >
-          <div className="container mx-auto">
-            <header className="mb-12 px-4 text-center">
-              <h2
-                id="tienda-title"
-                className="mb-4 text-4xl font-bold text-foreground text-rock-shadow"
-              >
-                Tienda
-              </h2>
-              <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                Llevá con vos una remera que te identifique en cada viaje. Elegí
-                tu diseño y tu banda. ¿Falta alguna? Escribinos y dejanos tu
-                pedido.
-              </p>
-            </header>
+          <div className="container mx-auto px-4">
+            <div className="mb-12 grid items-end gap-6 md:grid-cols-[1fr_auto]">
+              <div>
+                <Eyebrow>Vestí tu pasión</Eyebrow>
+                <h2
+                  className="text-4xl font-black uppercase leading-[.9] tracking-tight text-foreground sm:text-5xl md:text-6xl"
+                  style={{ fontFamily: "var(--font-londrina)" }}
+                >
+                  El rock también
+                  <br />
+                  <span className="text-primary">se lleva puesto.</span>
+                </h2>
+                <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Elegí tu diseño y tu banda. Llevá con vos una remera que te
+                  identifique en cada viaje. ¿No encontrás lo que buscás?
+                  Escribinos tu pedido.
+                </p>
+              </div>
+              <div className="hidden h-16 w-16 items-center justify-center border border-primary/30 bg-primary/5 text-primary md:flex">
+                <Sparkles className="h-7 w-7" />
+              </div>
+            </div>
             <CartPageContent />
           </div>
         </section>
 
-        {/* CONTACTO */}
+        {/* Contacto */}
         <section
           id="contacto"
           aria-labelledby="contacto-title"
-          className="relative z-10 scroll-mt-24 bg-card/30 px-4 py-16"
+          className="relative z-10 scroll-mt-24 overflow-hidden border-y border-white/10 bg-[#090909] px-4 py-24 text-white"
         >
-          <div className="container mx-auto">
-            <header className="mb-12 text-center">
-              <h2
-                id="contacto-title"
-                className="mb-4 text-4xl font-bold text-foreground text-rock-shadow"
-              >
-                Contacto
-              </h2>
-              <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-                ¿Dudas sobre un viaje, una reserva o un pedido? Hablá con
-                nosotros directamente.
-              </p>
-              <Button size="lg" className="mt-6 px-8 py-6 text-lg" asChild>
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-5 w-5" aria-hidden="true" />
-                  Escribinos por WhatsApp
-                </a>
-              </Button>
-            </header>
+          <div className="pointer-events-none absolute -right-20 top-0 h-80 w-80 rounded-full bg-red-700/15 blur-[120px]" />
+          <div className="container relative mx-auto">
+            <div className="grid gap-14 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+              <div>
+                <Eyebrow light>Del otro lado estamos nosotros</Eyebrow>
+                <h2
+                  className="max-w-xl text-5xl font-black uppercase leading-[.86] tracking-tight sm:text-6xl md:text-7xl"
+                  style={{ fontFamily: "var(--font-londrina)" }}
+                >
+                  ¿Nos vamos
+                  <br />
+                  <span className="text-red-600">de viaje?</span>
+                </h2>
+                <p className="mt-6 max-w-lg text-base leading-8 text-white/55 sm:text-lg">
+                  ¿Tenés dudas sobre un viaje, una reserva o un pedido? Hablá
+                  directamente con nosotros. Te ayudamos a preparar el próximo
+                  recital.
+                </p>
+                <Button
+                  size="lg"
+                  className="mt-8 h-14 rounded-none bg-red-600 px-7 text-xs font-black uppercase tracking-[.14em] text-white hover:bg-red-700"
+                  asChild
+                >
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Escribinos por WhatsApp
+                    <ArrowUpRight className="ml-3 h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
-              {BENEFICIOS.map(({ icon: Icon, title, description }) => (
-                <article key={title} className="text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 motion-safe:animate-rock-glow">
-                    <Icon className="h-8 w-8 text-primary" aria-hidden="true" />
-                  </div>
-                  <h3 className="mb-2 text-xl font-semibold text-foreground">
-                    {title}
-                  </h3>
-                  <p className="text-muted-foreground">{description}</p>
-                </article>
-              ))}
+              <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-3">
+                {BENEFICIOS.map(({ icon: Icon, number, title, description }) => (
+                  <article
+                    key={title}
+                    className="bg-[#101010] p-6 transition-colors hover:bg-[#151010] sm:p-7"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Icon className="h-7 w-7 text-red-500" />
+                      <span className="text-[10px] font-black tracking-[.2em] text-white/25">
+                        {number}
+                      </span>
+                    </div>
+                    <h3 className="mt-8 text-lg font-black uppercase tracking-tight text-white">
+                      {title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-white/45">
+                      {description}
+                    </p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* CARRITO FLOTANTE + AVISO AL AGREGAR */}
       <CartFloatingButton onOpen={() => setCartOpen(true)} />
 
-      {/* BOTÓN FLOTANTE DE WHATSAPP */}
       <a
         href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Escribinos por WhatsApp"
-        className="fixed bottom-5 left-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366]"
+        className="fixed bottom-5 left-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgba(37,211,102,.28)] transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366]"
       >
         <MessageCircle className="h-7 w-7" aria-hidden="true" />
       </a>
 
-      {/* FOOTER */}
-      <footer className="relative z-10 border-t border-border bg-card px-6 py-12">
-        <div className="container mx-auto max-w-7xl">
-          <div className="grid gap-10 md:grid-cols-4">
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/10 bg-[#050505] px-6 py-14 text-white">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
             <div>
-              <div className="mb-4 flex items-center space-x-3">
-                <Guitar className="h-7 w-7 text-primary" aria-hidden="true" />
-                <span className="text-xl font-bold text-foreground">
-                  Locura y Realidad
+              <div className="mb-5 flex items-center gap-3">
+                {/* <span className="flex h-11 w-11 items-center justify-center border border-red-500/40 bg-red-500/10 text-red-500">
+                  <Guitar className="h-6 w-6" />
+                </span> */}
+                <span
+                  className="text-2xl font-black uppercase leading-none"
+                  style={{ fontFamily: "var(--font-bbh)" }}
+                >
+                  Locura <span className="text-red-500">&</span>
+                  <br />
+                  <span className="text-white/55">Realidad</span>
                 </span>
               </div>
-              <p className="max-w-xs text-base leading-relaxed text-muted-foreground">
-                Viajes a recitales desde Santiago del Estero. Desde el 23 de
-                marzo de 2022.
+              <p className="max-w-xs text-sm leading-7 text-white/40">
+                Viajes a recitales desde Santiago del Estero. Una comunidad
+                que se encuentra en la ruta desde el 23 de marzo de 2022.
               </p>
             </div>
 
             <nav aria-label="Secciones del sitio">
-              <h2 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
-                <MapPin className="h-5 w-5 text-primary" aria-hidden="true" />
-                <span>Explorá</span>
+              <h2 className="mb-5 text-[10px] font-black uppercase tracking-[.25em] text-white/75">
+                Explorá
               </h2>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-sm text-white/40">
                 {navLinks
-                  .filter((l) => l.id !== "contacto")
+                  .filter((link) => link.id !== "contacto")
                   .map(({ id, label }) => (
                     <li key={id}>
                       <a
                         href={`#${id}`}
-                        className="transition-colors hover:text-primary"
+                        className="transition-colors hover:text-red-400"
                       >
                         {label}
                       </a>
@@ -645,17 +924,16 @@ export default function HomePage() {
             </nav>
 
             <div>
-              <h2 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
-                <Users className="h-5 w-5 text-primary" aria-hidden="true" />
-                <span>Empresa</span>
+              <h2 className="mb-5 text-[10px] font-black uppercase tracking-[.25em] text-white/75">
+                Estamos cerca
               </h2>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <ul className="space-y-3 text-sm text-white/40">
                 <li>
                   <a
                     href={WHATSAPP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors hover:text-primary"
+                    className="transition-colors hover:text-red-400"
                   >
                     WhatsApp
                   </a>
@@ -665,11 +943,10 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h2 className="mb-6 flex items-center space-x-2 font-semibold text-foreground">
-                <Newspaper className="h-5 w-5 text-primary" aria-hidden="true" />
-                <span>Seguinos</span>
+              <h2 className="mb-5 text-[10px] font-black uppercase tracking-[.25em] text-white/75">
+                Seguinos
               </h2>
-              <ul className="flex space-x-6 text-muted-foreground">
+              <ul className="flex gap-3">
                 {SOCIALS.map(({ label, href, Icon }) => (
                   <li key={label}>
                     <a
@@ -677,9 +954,9 @@ export default function HomePage() {
                       aria-label={label}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="transition-colors hover:text-primary"
+                      className="flex h-11 w-11 items-center justify-center border border-white/10 text-white/45 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
                     >
-                      <Icon className="h-6 w-6" aria-hidden="true" />
+                      <Icon className="h-5 w-5" aria-hidden="true" />
                     </a>
                   </li>
                 ))}
@@ -687,10 +964,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-10 border-t border-border pt-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Locura y Realidad. Todos los derechos
-              reservados.
+          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-7 text-[10px] font-semibold uppercase tracking-[.15em] text-white/25 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {new Date().getFullYear()} Locura y Realidad. Todos los
+              derechos reservados.
+            </p>
+            <p className="inline-flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              La ruta es parte del show
             </p>
           </div>
         </div>
