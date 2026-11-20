@@ -31,17 +31,21 @@ import {
   Loader2,
   Star,
   Tag,
+  Boxes,
+  Ruler,
+  Layers,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Product,
   ProductModalProps,
+  ProductStockMode,
+  ProductVariant,
+  SizeStock,
 } from "@/components/types/product";
 
-const categories = [
-  "Ropa",
-  "Accesorios",
-];
+const categories = ["Ropa", "Accesorios"];
 
 interface Errors {
   [key: string]: string;
@@ -49,6 +53,13 @@ interface Errors {
 
 interface FormProduct extends Omit<Product, "image"> {
   image: File | string | null;
+  variants: ProductVariant[];
+  sizeStock: SizeStock[];
+  stockMode: ProductStockMode;
+  stockQuantity: number | null;
+  minStock: number;
+  groupLabel: string;
+  optionLabel: string;
 }
 
 const initialFormData: FormProduct = {
@@ -62,6 +73,18 @@ const initialFormData: FormProduct = {
   rating: 5,
   inStock: true,
   sizes: [],
+  variants: [],
+  sizeStock: [],
+  stockMode: "simple",
+  stockQuantity: 0,
+  minStock: 0,
+  groupLabel: "",
+  optionLabel: "",
+};
+
+const numberValue = (value: string) => {
+  if (value.trim() === "") return 0;
+  return Number(value.replace(",", ".")) || 0;
 };
 
 export function ProductModal({
@@ -81,7 +104,6 @@ export function ProductModal({
 
   const objectUrlRef = useRef<string | null>(null);
 
-  // Liberar URLs temporales de imágenes.
   const clearObjectUrl = () => {
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
@@ -89,7 +111,6 @@ export function ProductModal({
     }
   };
 
-  // Inicializar formulario al abrir o cambiar de producto.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -97,6 +118,7 @@ export function ProductModal({
 
     if (product) {
       setFormData({
+        ...initialFormData,
         _id: product._id,
         name: product.name || "",
         description: product.description || "",
@@ -108,6 +130,17 @@ export function ProductModal({
         rating: product.rating ?? 5,
         inStock: product.inStock ?? true,
         sizes: Array.isArray(product.sizes) ? [...product.sizes] : [],
+        variants: Array.isArray(product.variants)
+          ? product.variants.map((variant) => ({ ...variant }))
+          : [],
+        sizeStock: Array.isArray(product.sizeStock)
+          ? product.sizeStock.map((item) => ({ ...item }))
+          : [],
+        stockMode: product.stockMode || "legacy",
+        stockQuantity: product.stockQuantity ?? null,
+        minStock: product.minStock ?? 0,
+        groupLabel: product.groupLabel || "",
+        optionLabel: product.optionLabel || "",
       });
 
       setImagePreview(product.image || null);
@@ -125,7 +158,6 @@ export function ProductModal({
     };
   }, [product, isOpen]);
 
-  // Liberar cualquier URL temporal al desmontar.
   useEffect(() => {
     return () => {
       clearObjectUrl();
@@ -134,7 +166,7 @@ export function ProductModal({
 
   const handleInputChange = (
     field: keyof FormProduct,
-    value: string | number | boolean | File | null | string[]
+    value: string | number | boolean | File | null | string[] | ProductVariant[] | SizeStock[]
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -147,6 +179,56 @@ export function ProductModal({
         [field]: "",
       }));
     }
+  };
+
+  const changeStockMode = (mode: ProductStockMode) => {
+    setFormData((prev) => {
+      let sizeStock = prev.sizeStock;
+      let variants = prev.variants;
+
+      if (mode === "sizes") {
+        sizeStock = prev.sizes.map((size) => {
+          const existing = prev.sizeStock.find(
+            (item) => item.size.toLowerCase() === size.toLowerCase()
+          );
+
+          return existing || {
+            size,
+            stockQuantity: 0,
+            minStock: 0,
+          };
+        });
+      }
+
+      if (mode === "variants" && variants.length === 0) {
+        variants = [
+          {
+            label: "",
+            group: "",
+            price: undefined,
+            inStock: true,
+            note: "",
+            stockQuantity: 0,
+            minStock: 0,
+          },
+        ];
+      }
+
+      return {
+        ...prev,
+        stockMode: mode,
+        sizeStock,
+        variants,
+      };
+    });
+
+    setErrors((prev) => ({
+      ...prev,
+      stockMode: "",
+      stockQuantity: "",
+      sizeStock: "",
+      variants: "",
+    }));
   };
 
   const validateForm = () => {
@@ -183,8 +265,7 @@ export function ProductModal({
     ) {
       newErrors.costPrice = "Ingresá un precio de costo válido.";
     } else if (formData.costPrice >= formData.price) {
-      newErrors.costPrice =
-        "El costo debe ser menor al precio de venta.";
+      newErrors.costPrice = "El costo debe ser menor al precio de venta.";
     }
 
     if (
@@ -195,8 +276,58 @@ export function ProductModal({
       newErrors.rating = "El rating debe estar entre 0 y 5.";
     }
 
-    if (!formData.sizes.length) {
-      newErrors.sizes = "Agregá al menos una talla o tamaño.";
+    if (formData.stockMode === "simple") {
+      if (
+        formData.stockQuantity === null ||
+        !Number.isFinite(formData.stockQuantity) ||
+        formData.stockQuantity < 0
+      ) {
+        newErrors.stockQuantity = "Ingresá una cantidad válida.";
+      }
+
+      if (formData.minStock < 0) {
+        newErrors.minStock = "El mínimo no puede ser negativo.";
+      }
+    }
+
+    if (formData.stockMode === "sizes") {
+      if (formData.sizes.length === 0) {
+        newErrors.sizes = "Agregá al menos un talle.";
+      }
+
+      for (const size of formData.sizes) {
+        const item = formData.sizeStock.find(
+          (entry) => entry.size.toLowerCase() === size.toLowerCase()
+        );
+
+        if (
+          !item ||
+          !Number.isFinite(item.stockQuantity) ||
+          item.stockQuantity < 0
+        ) {
+          newErrors.sizeStock = `Configurá el stock del talle ${size}.`;
+          break;
+        }
+      }
+    }
+
+    if (formData.stockMode === "variants") {
+      if (formData.variants.length === 0) {
+        newErrors.variants = "Agregá al menos una variante.";
+      }
+
+      const invalidVariant = formData.variants.find(
+        (variant) =>
+          !variant.label.trim() ||
+          variant.stockQuantity == null ||
+          !Number.isFinite(variant.stockQuantity) ||
+          variant.stockQuantity < 0
+      );
+
+      if (invalidVariant) {
+        newErrors.variants =
+          "Cada variante necesita una etiqueta y una cantidad válida.";
+      }
     }
 
     if (!product && !formData.image) {
@@ -212,7 +343,6 @@ export function ProductModal({
     }
 
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
@@ -258,7 +388,11 @@ export function ProductModal({
 
     if (!size) return;
 
-    if (formData.sizes.includes(size)) {
+    if (
+      formData.sizes.some(
+        (existing) => existing.toLowerCase() === size.toLowerCase()
+      )
+    ) {
       toast.error("Esa talla o tamaño ya fue agregado.");
       return;
     }
@@ -266,6 +400,13 @@ export function ProductModal({
     setFormData((prev) => ({
       ...prev,
       sizes: [...prev.sizes, size],
+      sizeStock:
+        prev.stockMode === "sizes"
+          ? [
+              ...prev.sizeStock,
+              { size, stockQuantity: 0, minStock: 0 },
+            ]
+          : prev.sizeStock,
     }));
 
     setNewSize("");
@@ -273,6 +414,7 @@ export function ProductModal({
     setErrors((prev) => ({
       ...prev,
       sizes: "",
+      sizeStock: "",
     }));
   };
 
@@ -280,14 +422,72 @@ export function ProductModal({
     setFormData((prev) => ({
       ...prev,
       sizes: prev.sizes.filter((size) => size !== sizeToRemove),
+      sizeStock: prev.sizeStock.filter(
+        (item) => item.size.toLowerCase() !== sizeToRemove.toLowerCase()
+      ),
+    }));
+  };
+
+  const updateSizeStock = (
+    size: string,
+    field: "stockQuantity" | "minStock",
+    value: number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizeStock: prev.sizeStock.map((item) =>
+        item.size === size ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const addVariant = () => {
+    if (formData.variants.length >= 40) {
+      toast.error("Podés agregar hasta 40 variantes.");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        {
+          label: "",
+          group: "",
+          price: undefined,
+          inStock: true,
+          note: "",
+          stockQuantity: 0,
+          minStock: 0,
+        },
+      ],
+    }));
+  };
+
+  const updateVariant = (
+    index: number,
+    field: keyof ProductVariant,
+    value: string | number | boolean | null
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((variant, i) =>
+        i === index ? { ...variant, [field]: value } : variant
+      ),
+    }));
+  };
+
+  const removeVariant = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (isSubmitting) return;
-    if (!validateForm()) return;
+    if (isSubmitting || !validateForm()) return;
 
     setIsSubmitting(true);
 
@@ -301,6 +501,21 @@ export function ProductModal({
     form.append("category", formData.category);
     form.append("rating", String(formData.rating));
     form.append("inStock", String(formData.inStock));
+
+    form.append("stockMode", formData.stockMode);
+    form.append(
+      "stockQuantity",
+      formData.stockQuantity == null ? "" : String(formData.stockQuantity)
+    );
+    form.append("minStock", String(formData.minStock));
+
+    form.append("sizeStock", JSON.stringify(
+      formData.stockMode === "sizes" ? formData.sizeStock : []
+    ));
+
+    form.append("variants", JSON.stringify(formData.variants));
+    form.append("groupLabel", formData.groupLabel);
+    form.append("optionLabel", formData.optionLabel);
 
     formData.sizes.forEach((size) => {
       form.append("sizes", size);
@@ -326,13 +541,12 @@ export function ProductModal({
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "No se pudo guardar el producto."
-        );
+        throw new Error(data.error || "No se pudo guardar el producto.");
       }
 
       const savedProduct: Product = {
         ...formData,
+        ...data,
         _id: data._id || product?._id,
         image:
           data.image ||
@@ -371,16 +585,36 @@ export function ProductModal({
       maximumFractionDigits: 2,
     }).format(value || 0);
 
+  const availableStock = (() => {
+    if (formData.stockMode === "simple") {
+      return formData.stockQuantity ?? 0;
+    }
+
+    if (formData.stockMode === "sizes") {
+      return formData.sizeStock.reduce(
+        (total, item) => total + item.stockQuantity,
+        0
+      );
+    }
+
+    if (formData.stockMode === "variants") {
+      return formData.variants.reduce(
+        (total, item) => total + (item.stockQuantity ?? 0),
+        0
+      );
+    }
+
+    return null;
+  })();
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && !isSubmitting) {
-          onClose();
-        }
+        if (!open && !isSubmitting) onClose();
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto border-white/10 bg-[#0b0b0d] p-0 text-white shadow-2xl">
+      <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto border-white/10 bg-[#0b0b0d] p-0 text-white shadow-2xl">
         <DialogHeader className="border-b border-white/[0.07] bg-gradient-to-r from-red-950/30 via-[#101013] to-[#101013] px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
@@ -391,11 +625,8 @@ export function ProductModal({
               <DialogTitle className="text-xl font-bold tracking-tight text-white">
                 {product ? "Editar producto" : "Nuevo producto"}
               </DialogTitle>
-
               <p className="mt-1 text-xs text-zinc-500">
-                {product
-                  ? "Actualizá la información de tu producto."
-                  : "Completá los datos para agregar un producto al catálogo."}
+                Administrá los datos, precios e inventario de tu catálogo.
               </p>
             </div>
           </div>
@@ -439,10 +670,7 @@ export function ProductModal({
               </div>
 
               <div className="flex flex-col justify-center gap-3">
-                <Label
-                  htmlFor="product-image"
-                  className="text-sm font-medium text-zinc-300"
-                >
+                <Label htmlFor="product-image" className="text-sm text-zinc-300">
                   Seleccionar fotografía
                 </Label>
 
@@ -457,8 +685,8 @@ export function ProductModal({
 
                 <p className="text-xs leading-relaxed text-zinc-500">
                   {product
-                    ? "Si no seleccionás una nueva imagen, se conservará la fotografía actual."
-                    : "La imagen se subirá automáticamente a Cloudinary al guardar el producto."}
+                    ? "Si no seleccionás otra imagen, se conservará la actual."
+                    : "La imagen se subirá automáticamente a Cloudinary."}
                 </p>
 
                 {errors.image && (
@@ -484,7 +712,6 @@ export function ProductModal({
                 <Label htmlFor="name" className="text-zinc-300">
                   Nombre del producto *
                 </Label>
-
                 <Input
                   id="name"
                   value={formData.name}
@@ -493,9 +720,8 @@ export function ProductModal({
                   }
                   placeholder="Ej: Camiseta Vintage Rock"
                   disabled={isSubmitting}
-                  className="border-white/10 bg-white/[0.03] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
+                  className="border-white/10 bg-white/[0.03] text-white placeholder:text-zinc-600"
                 />
-
                 {errors.name && (
                   <p className="text-xs text-red-400">{errors.name}</p>
                 )}
@@ -503,7 +729,6 @@ export function ProductModal({
 
               <div className="space-y-2">
                 <Label className="text-zinc-300">Categoría *</Label>
-
                 <Select
                   value={formData.category}
                   onValueChange={(value) =>
@@ -514,7 +739,6 @@ export function ProductModal({
                   <SelectTrigger className="border-white/10 bg-white/[0.03] text-white">
                     <SelectValue placeholder="Seleccioná una categoría" />
                   </SelectTrigger>
-
                   <SelectContent className="border-white/10 bg-[#17171b] text-white">
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
@@ -523,11 +747,8 @@ export function ProductModal({
                     ))}
                   </SelectContent>
                 </Select>
-
                 {errors.category && (
-                  <p className="text-xs text-red-400">
-                    {errors.category}
-                  </p>
+                  <p className="text-xs text-red-400">{errors.category}</p>
                 )}
               </div>
             </div>
@@ -536,7 +757,6 @@ export function ProductModal({
               <Label htmlFor="description" className="text-zinc-300">
                 Descripción *
               </Label>
-
               <Textarea
                 id="description"
                 value={formData.description}
@@ -546,14 +766,39 @@ export function ProductModal({
                 placeholder="Describí las características del producto..."
                 rows={4}
                 disabled={isSubmitting}
-                className="resize-none border-white/10 bg-white/[0.03] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
+                className="resize-none border-white/10 bg-white/[0.03] text-white placeholder:text-zinc-600"
               />
-
               {errors.description && (
-                <p className="text-xs text-red-400">
-                  {errors.description}
-                </p>
+                <p className="text-xs text-red-400">{errors.description}</p>
               )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Etiqueta del grupo</Label>
+                <Input
+                  value={formData.groupLabel}
+                  onChange={(event) =>
+                    handleInputChange("groupLabel", event.target.value)
+                  }
+                  placeholder="Ej: Color"
+                  disabled={isSubmitting}
+                  className="border-white/10 bg-white/[0.03] text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Etiqueta de opción</Label>
+                <Input
+                  value={formData.optionLabel}
+                  onChange={(event) =>
+                    handleInputChange("optionLabel", event.target.value)
+                  }
+                  placeholder="Ej: Modelo"
+                  disabled={isSubmitting}
+                  className="border-white/10 bg-white/[0.03] text-white"
+                />
+              </div>
             </div>
           </section>
 
@@ -569,94 +814,41 @@ export function ProductModal({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-zinc-300">
-                  Precio de venta *
-                </Label>
-
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={formData.price}
-                  onChange={(event) =>
-                    handleInputChange(
-                      "price",
-                      Number.parseFloat(event.target.value) || 0
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="border-white/10 bg-white/[0.03] text-white"
-                />
-
-                {errors.price && (
-                  <p className="text-xs text-red-400">{errors.price}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="originalPrice" className="text-zinc-300">
-                  Precio original *
-                </Label>
-
-                <Input
-                  id="originalPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.originalPrice}
-                  onChange={(event) =>
-                    handleInputChange(
-                      "originalPrice",
-                      Number.parseFloat(event.target.value) || 0
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="border-white/10 bg-white/[0.03] text-white"
-                />
-
-                {errors.originalPrice && (
-                  <p className="text-xs text-red-400">
-                    {errors.originalPrice}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="costPrice" className="text-zinc-300">
-                  Precio de costo *
-                </Label>
-
-                <Input
-                  id="costPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.costPrice}
-                  onChange={(event) =>
-                    handleInputChange(
-                      "costPrice",
-                      Number.parseFloat(event.target.value) || 0
-                    )
-                  }
-                  disabled={isSubmitting}
-                  className="border-white/10 bg-white/[0.03] text-white"
-                />
-
-                {errors.costPrice && (
-                  <p className="text-xs text-red-400">
-                    {errors.costPrice}
-                  </p>
-                )}
-              </div>
+              {[
+                { key: "price", label: "Precio de venta *" },
+                { key: "originalPrice", label: "Precio original *" },
+                { key: "costPrice", label: "Precio de costo *" },
+              ].map(({ key, label }) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key} className="text-zinc-300">
+                    {label}
+                  </Label>
+                  <Input
+                    id={key}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData[key as "price" | "originalPrice" | "costPrice"]}
+                    onChange={(event) =>
+                      handleInputChange(
+                        key as "price" | "originalPrice" | "costPrice",
+                        numberValue(event.target.value)
+                      )
+                    }
+                    disabled={isSubmitting}
+                    className="border-white/10 bg-white/[0.03] text-white"
+                  />
+                  {errors[key] && (
+                    <p className="text-xs text-red-400">{errors[key]}</p>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 Resumen de rentabilidad
               </p>
-
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <p className="text-xs text-zinc-500">Venta</p>
@@ -664,14 +856,12 @@ export function ProductModal({
                     {formatPrice(formData.price)}
                   </p>
                 </div>
-
                 <div>
                   <p className="text-xs text-zinc-500">Costo</p>
                   <p className="mt-1 font-semibold text-zinc-300">
                     {formatPrice(formData.costPrice)}
                   </p>
                 </div>
-
                 <div className="col-span-2 sm:col-span-1">
                   <p className="text-xs text-zinc-500">Ganancia estimada</p>
                   <p
@@ -704,7 +894,6 @@ export function ProductModal({
                 <Label htmlFor="rating" className="text-zinc-300">
                   Calificación (0 a 5)
                 </Label>
-
                 <Input
                   id="rating"
                   type="number"
@@ -715,42 +904,490 @@ export function ProductModal({
                   onChange={(event) =>
                     handleInputChange(
                       "rating",
-                      Number.parseFloat(event.target.value) || 0
+                      numberValue(event.target.value)
                     )
                   }
                   disabled={isSubmitting}
                   className="border-white/10 bg-white/[0.03] text-white"
                 />
-
                 {errors.rating && (
                   <p className="text-xs text-red-400">{errors.rating}</p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-                <div>
-                  <p className="text-sm font-medium text-white">
-                    Disponibilidad
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {formData.inStock
-                      ? "El producto está disponible."
-                      : "El producto está agotado."}
-                  </p>
+              {formData.stockMode === "legacy" && (
+                <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Disponibilidad manual
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {formData.inStock
+                        ? "El producto está disponible."
+                        : "El producto está agotado."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.inStock}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("inStock", checked)
+                    }
+                    disabled={isSubmitting}
+                  />
                 </div>
-
-                <Switch
-                  checked={formData.inStock}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("inStock", checked)
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
+              )}
             </div>
           </section>
 
           <div className="h-px bg-white/[0.07]" />
+
+          {/* INVENTARIO */}
+          <section className="space-y-5">
+            <div className="flex items-center gap-2">
+              <Boxes className="h-4 w-4 text-red-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Gestión de inventario
+                </h3>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Elegí cómo querés controlar las unidades disponibles.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                {
+                  value: "simple",
+                  title: "Stock general",
+                  description: "Una cantidad total para todo el producto.",
+                  icon: Package,
+                },
+                {
+                  value: "sizes",
+                  title: "Stock por talle",
+                  description: "Una cantidad independiente para cada talle.",
+                  icon: Ruler,
+                },
+                {
+                  value: "variants",
+                  title: "Stock por variante",
+                  description: "Una cantidad para cada opción o modelo.",
+                  icon: Layers,
+                },
+                {
+                  value: "legacy",
+                  title: "Disponibilidad manual",
+                  description: "Sin cantidades. Conserva el sistema anterior.",
+                  icon: Tag,
+                },
+              ].map((mode) => {
+                const Icon = mode.icon;
+                const selected = formData.stockMode === mode.value;
+
+                return (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() =>
+                      changeStockMode(mode.value as ProductStockMode)
+                    }
+                    className={`flex items-start gap-3 rounded-xl border p-4 text-left transition ${
+                      selected
+                        ? "border-red-500/50 bg-red-500/[0.08]"
+                        : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                        selected
+                          ? "bg-red-500/15 text-red-400"
+                          : "bg-white/[0.05] text-zinc-500"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-white">
+                        {mode.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        {mode.description}
+                      </p>
+                    </div>
+                    <span
+                      className={`mt-1 h-3 w-3 shrink-0 rounded-full border ${
+                        selected
+                          ? "border-red-400 bg-red-500"
+                          : "border-zinc-600"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            {formData.stockMode === "simple" && (
+              <div className="space-y-4 rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    Inventario general
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Controlá cuántas unidades tenés disponibles.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-zinc-300">
+                      Cantidad disponible *
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.stockQuantity ?? ""}
+                      onChange={(event) =>
+                        handleInputChange(
+                          "stockQuantity",
+                          event.target.value === ""
+                            ? null
+                            : numberValue(event.target.value)
+                        )
+                      }
+                      disabled={isSubmitting}
+                      className="border-white/10 bg-white/[0.03] text-white"
+                    />
+                    {errors.stockQuantity && (
+                      <p className="text-xs text-red-400">
+                        {errors.stockQuantity}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-zinc-300">
+                      Avisar cuando queden
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.minStock}
+                      onChange={(event) =>
+                        handleInputChange(
+                          "minStock",
+                          numberValue(event.target.value)
+                        )
+                      }
+                      disabled={isSubmitting}
+                      className="border-white/10 bg-white/[0.03] text-white"
+                    />
+                    <p className="text-xs text-zinc-600">
+                      Umbral para identificar stock bajo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.stockMode === "sizes" && (
+              <div className="space-y-4 rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    Inventario por talle
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Cada talle tiene su propia cantidad y alerta de stock.
+                  </p>
+                </div>
+
+                {formData.sizes.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-white/10 p-5 text-center">
+                    <Ruler className="mx-auto mb-2 h-6 w-6 text-zinc-600" />
+                    <p className="text-sm text-zinc-400">
+                      Primero agregá los talles del producto.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.sizes.map((size) => {
+                      const item = formData.sizeStock.find(
+                        (entry) =>
+                          entry.size.toLowerCase() === size.toLowerCase()
+                      );
+
+                      return (
+                        <div
+                          key={size}
+                          className="grid gap-3 rounded-lg border border-white/[0.07] bg-black/20 p-3 sm:grid-cols-[80px_1fr_1fr]"
+                        >
+                          <div className="flex items-center">
+                            <Badge className="border border-red-500/20 bg-red-500/10 text-red-300">
+                              {size}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs text-zinc-400">
+                              Unidades
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={item?.stockQuantity ?? 0}
+                              onChange={(event) =>
+                                updateSizeStock(
+                                  size,
+                                  "stockQuantity",
+                                  numberValue(event.target.value)
+                                )
+                              }
+                              disabled={isSubmitting}
+                              className="h-9 border-white/10 bg-white/[0.03] text-white"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs text-zinc-400">
+                              Alerta de stock bajo
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={item?.minStock ?? 0}
+                              onChange={(event) =>
+                                updateSizeStock(
+                                  size,
+                                  "minStock",
+                                  numberValue(event.target.value)
+                                )
+                              }
+                              disabled={isSubmitting}
+                              className="h-9 border-white/10 bg-white/[0.03] text-white"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {errors.sizeStock && (
+                  <p className="text-xs text-red-400">{errors.sizeStock}</p>
+                )}
+                {errors.sizes && (
+                  <p className="text-xs text-red-400">{errors.sizes}</p>
+                )}
+              </div>
+            )}
+
+            {formData.stockMode === "variants" && (
+              <div className="space-y-4 rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      Inventario por variante
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Configurá cada opción y su cantidad disponible.
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addVariant}
+                    disabled={isSubmitting || formData.variants.length >= 40}
+                    className="shrink-0 border-white/10 bg-white/[0.04] text-white hover:bg-white/10"
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Agregar
+                  </Button>
+                </div>
+
+                {formData.variants.map((variant, index) => (
+                  <div
+                    key={index}
+                    className="space-y-3 rounded-lg border border-white/[0.08] bg-black/20 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                        Variante {index + 1}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(index)}
+                        disabled={isSubmitting}
+                        className="rounded-md p-2 text-zinc-500 transition hover:bg-red-500/10 hover:text-red-400"
+                        aria-label={`Eliminar variante ${index + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Nombre de la variante *
+                        </Label>
+                        <Input
+                          value={variant.label}
+                          onChange={(event) =>
+                            updateVariant(index, "label", event.target.value)
+                          }
+                          placeholder="Ej: Negro, Rojo, Edición especial"
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Grupo u opción
+                        </Label>
+                        <Input
+                          value={variant.group || ""}
+                          onChange={(event) =>
+                            updateVariant(index, "group", event.target.value)
+                          }
+                          placeholder="Ej: Color"
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Precio particular (opcional)
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={variant.price ?? ""}
+                          onChange={(event) =>
+                            updateVariant(
+                              index,
+                              "price",
+                              event.target.value === ""
+                                ? null
+                                : numberValue(event.target.value)
+                            )
+                          }
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Unidades disponibles *
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={variant.stockQuantity ?? ""}
+                          onChange={(event) =>
+                            updateVariant(
+                              index,
+                              "stockQuantity",
+                              event.target.value === ""
+                                ? null
+                                : numberValue(event.target.value)
+                            )
+                          }
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Avisar cuando queden
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={variant.minStock ?? 0}
+                          onChange={(event) =>
+                            updateVariant(
+                              index,
+                              "minStock",
+                              numberValue(event.target.value)
+                            )
+                          }
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">
+                          Nota (opcional)
+                        </Label>
+                        <Input
+                          value={variant.note || ""}
+                          onChange={(event) =>
+                            updateVariant(index, "note", event.target.value)
+                          }
+                          placeholder="Detalle adicional"
+                          disabled={isSubmitting}
+                          className="border-white/10 bg-white/[0.03] text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {errors.variants && (
+                  <p className="text-xs text-red-400">{errors.variants}</p>
+                )}
+              </div>
+            )}
+
+            {formData.stockMode !== "legacy" && (
+              <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
+                <div>
+                  <p className="text-xs text-zinc-500">
+                    Unidades totales configuradas
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-white">
+                    {availableStock}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-500">Estado calculado</p>
+                  <Badge
+                    className={
+                      (availableStock ?? 0) > 0
+                        ? "mt-1 border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                        : "mt-1 border border-red-500/20 bg-red-500/10 text-red-400"
+                    }
+                  >
+                    {(availableStock ?? 0) > 0 ? "Disponible" : "Agotado"}
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/15 bg-amber-500/[0.04] p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <p className="text-xs leading-relaxed text-zinc-400">
+                El inventario registra las cantidades disponibles. El stock
+                todavía no se descuenta automáticamente por ventas: eso requiere
+                conectarlo al proceso de compra.
+              </p>
+            </div>
+          </section>
 
           {/* TALLAS */}
           <section className="space-y-4">
@@ -759,7 +1396,8 @@ export function ProductModal({
                 Tallas y tamaños
               </h3>
               <p className="mt-1 text-xs text-zinc-500">
-                Agregá las opciones disponibles para este producto.
+                Definí las opciones del producto. Si elegís inventario por
+                talle, cada opción tendrá su propio stock.
               </p>
             </div>
 
@@ -777,7 +1415,6 @@ export function ProductModal({
                 disabled={isSubmitting}
                 className="border-white/10 bg-white/[0.03] text-white placeholder:text-zinc-600"
               />
-
               <Button
                 type="button"
                 onClick={addSize}
@@ -797,7 +1434,6 @@ export function ProductModal({
                     className="gap-2 border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-red-300"
                   >
                     {size}
-
                     <button
                       type="button"
                       onClick={() => removeSize(size)}

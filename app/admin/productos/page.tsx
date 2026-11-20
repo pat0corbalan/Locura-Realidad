@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowDownRight,
   ArrowUpRight,
+  Boxes,
   Edit,
   Filter,
   Loader2,
@@ -17,6 +18,9 @@ import {
   Trash2,
   TrendingUp,
   X,
+  Ruler,
+  Layers,
+  Warehouse,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,7 +41,16 @@ const categories = [
   "Tecnología",
 ];
 
-type StockFilter = "all" | "available" | "unavailable";
+type StockFilter = "all" | "available" | "unavailable" | "low";
+
+type StockInfo = {
+  mode: "legacy" | "simple" | "sizes" | "variants";
+  quantity: number | null;
+  lowStock: boolean;
+  available: boolean;
+  label: string;
+  detail: string;
+};
 
 const formatPrice = (value: number | undefined | null) => {
   return new Intl.NumberFormat("es-AR", {
@@ -45,6 +58,88 @@ const formatPrice = (value: number | undefined | null) => {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(Number(value) || 0);
+};
+
+const getStockInfo = (product: Product): StockInfo => {
+  const mode = product.stockMode || "legacy";
+
+  if (mode === "simple") {
+    const quantity = Math.max(0, Number(product.stockQuantity) || 0);
+    const minimum = Math.max(0, Number(product.minStock) || 0);
+
+    return {
+      mode,
+      quantity,
+      available: quantity > 0,
+      lowStock: quantity > 0 && minimum > 0 && quantity <= minimum,
+      label: "Stock general",
+      detail: `${quantity} unidades`,
+    };
+  }
+
+  if (mode === "sizes") {
+    const items = Array.isArray(product.sizeStock)
+      ? product.sizeStock
+      : [];
+
+    const quantity = items.reduce(
+      (total, item) => total + Math.max(0, Number(item.stockQuantity) || 0),
+      0
+    );
+
+    const lowStock = items.some((item) => {
+      const stock = Math.max(0, Number(item.stockQuantity) || 0);
+      const minimum = Math.max(0, Number(item.minStock) || 0);
+
+      return stock > 0 && minimum > 0 && stock <= minimum;
+    });
+
+    return {
+      mode,
+      quantity,
+      available: quantity > 0,
+      lowStock,
+      label: "Por talle",
+      detail: `${items.length} talles · ${quantity} unidades`,
+    };
+  }
+
+  if (mode === "variants") {
+    const items = Array.isArray(product.variants)
+      ? product.variants
+      : [];
+
+    const quantity = items.reduce(
+      (total, item) =>
+        total + Math.max(0, Number(item.stockQuantity) || 0),
+      0
+    );
+
+    const lowStock = items.some((item) => {
+      const stock = Math.max(0, Number(item.stockQuantity) || 0);
+      const minimum = Math.max(0, Number(item.minStock) || 0);
+
+      return stock > 0 && minimum > 0 && stock <= minimum;
+    });
+
+    return {
+      mode,
+      quantity,
+      available: quantity > 0,
+      lowStock,
+      label: "Por variante",
+      detail: `${items.length} variantes · ${quantity} unidades`,
+    };
+  }
+
+  return {
+    mode: "legacy",
+    quantity: null,
+    available: Boolean(product.inStock),
+    lowStock: false,
+    label: "Manual",
+    detail: product.inStock ? "Disponible" : "Sin stock",
+  };
 };
 
 export default function ProductosPage() {
@@ -73,7 +168,6 @@ export default function ProductosPage() {
       }
 
       const data = await response.json();
-
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error cargando productos:", error);
@@ -87,6 +181,44 @@ export default function ProductosPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  const stats = useMemo(() => {
+    let available = 0;
+    let unavailable = 0;
+    let lowStock = 0;
+    let totalUnits = 0;
+    let trackedProducts = 0;
+
+    let totalValue = 0;
+
+    products.forEach((product) => {
+      const stock = getStockInfo(product);
+
+      if (stock.available) available++;
+      else unavailable++;
+
+      if (stock.lowStock) lowStock++;
+
+      if (stock.quantity !== null) {
+        totalUnits += stock.quantity;
+        trackedProducts++;
+      }
+
+      totalValue += Number(product.price) || 0;
+    });
+
+    return {
+      total: products.length,
+      available,
+      unavailable,
+      lowStock,
+      totalUnits,
+      trackedProducts,
+      averagePrice: products.length > 0
+        ? totalValue / products.length
+        : 0,
+    };
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
@@ -95,39 +227,28 @@ export default function ProductosPage() {
         !normalizedSearch ||
         product.name?.toLowerCase().includes(normalizedSearch) ||
         product.description?.toLowerCase().includes(normalizedSearch) ||
-        product.category?.toLowerCase().includes(normalizedSearch);
+        product.category?.toLowerCase().includes(normalizedSearch) ||
+        product.variants?.some((variant) =>
+          variant.label?.toLowerCase().includes(normalizedSearch)
+        ) ||
+        product.sizes?.some((size) =>
+          size.toLowerCase().includes(normalizedSearch)
+        );
 
       const matchesCategory =
         category === "Todas" || product.category === category;
 
+      const stock = getStockInfo(product);
+
       const matchesStock =
         stockFilter === "all" ||
-        (stockFilter === "available" && product.inStock) ||
-        (stockFilter === "unavailable" && !product.inStock);
+        (stockFilter === "available" && stock.available) ||
+        (stockFilter === "unavailable" && !stock.available) ||
+        (stockFilter === "low" && stock.lowStock);
 
       return matchesSearch && matchesCategory && matchesStock;
     });
   }, [products, search, category, stockFilter]);
-
-  const stats = useMemo(() => {
-    const available = products.filter((product) => product.inStock).length;
-    const unavailable = products.length - available;
-
-    const totalValue = products.reduce(
-      (total, product) => total + (Number(product.price) || 0),
-      0
-    );
-
-    const averagePrice =
-      products.length > 0 ? totalValue / products.length : 0;
-
-    return {
-      total: products.length,
-      available,
-      unavailable,
-      averagePrice,
-    };
-  }, [products]);
 
   const handleCreate = () => {
     setSelectedProduct(null);
@@ -139,8 +260,6 @@ export default function ProductosPage() {
     setIsModalOpen(true);
   };
 
-  // El modal ya guarda en la API.
-  // Acá solamente sincronizamos el listado local.
   const handleSaveProduct = (savedProduct: Product) => {
     setProducts((current) => {
       const existingIndex = current.findIndex(
@@ -210,10 +329,20 @@ export default function ProductosPage() {
   };
 
   const hasActiveFilters =
-    search.trim() !== "" || category !== "Todas" || stockFilter !== "all";
+    search.trim() !== "" ||
+    category !== "Todas" ||
+    stockFilter !== "all";
+
+  const closeModal = () => {
+    if (selectedProduct || isModalOpen) {
+      setIsModalOpen(false);
+      setSelectedProduct(null);
+    }
+  };
 
   return (
     <div className="min-h-screen space-y-8 bg-[#080808] p-4 text-white sm:p-6 lg:p-8">
+
       {/* HEADER */}
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
         <div>
@@ -229,8 +358,8 @@ export default function ProductosPage() {
           </h1>
 
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-            Administrá tu catálogo, controlá el stock y mantené actualizada
-            toda la información de tu tienda.
+            Administrá tu catálogo, controlá el inventario y supervisá la
+            rentabilidad de tu tienda desde un solo lugar.
           </p>
         </div>
 
@@ -296,7 +425,7 @@ export default function ProductosPage() {
                 <ArrowDownRight className="h-5 w-5 text-red-400" />
               </div>
               <Badge className="border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/10">
-                Sin stock
+                Agotados
               </Badge>
             </div>
 
@@ -305,7 +434,7 @@ export default function ProductosPage() {
                 {stats.unavailable}
               </p>
               <p className="mt-1 text-sm text-zinc-400">
-                Productos no disponibles
+                Productos sin disponibilidad
               </p>
             </div>
           </CardContent>
@@ -334,20 +463,97 @@ export default function ProductosPage() {
         </Card>
       </div>
 
+      {/* INVENTORY OVERVIEW */}
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="rounded-2xl border-white/[0.07] bg-[#111111]">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Warehouse className="h-4 w-4 text-red-400" />
+                  <h2 className="text-sm font-semibold text-white">
+                    Resumen de inventario
+                  </h2>
+                </div>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Cantidades de los productos con control numérico.
+                </p>
+              </div>
+
+              <Boxes className="h-8 w-8 text-zinc-700" />
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {stats.totalUnits.toLocaleString("es-AR")}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Unidades registradas
+                </p>
+              </div>
+
+              <div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {stats.trackedProducts}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Productos con stock numérico
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <button
+          type="button"
+          onClick={() => setStockFilter("low")}
+          className="rounded-2xl text-left transition hover:-translate-y-0.5"
+        >
+          <Card className="h-full rounded-2xl border-amber-500/15 bg-gradient-to-br from-amber-500/[0.08] to-[#111111] transition hover:border-amber-500/30">
+            <CardContent className="flex h-full items-center justify-between gap-4 p-5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-400" />
+                  <p className="text-sm font-semibold text-white">
+                    Stock bajo
+                  </p>
+                </div>
+
+                <p className="mt-3 text-3xl font-bold tabular-nums text-amber-400">
+                  {stats.lowStock}
+                </p>
+
+                <p className="mt-1 text-xs text-zinc-500">
+                  Productos que necesitan reposición
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+                <ArrowDownRight className="h-6 w-6 text-amber-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </button>
+      </div>
+
       {/* FILTERS */}
       <Card className="rounded-2xl border-white/[0.07] bg-[#111111]">
         <CardContent className="space-y-5 p-4 sm:p-5">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nombre, descripción o categoría..."
+                placeholder="Buscar por nombre, descripción, categoría o variante..."
                 className="h-12 rounded-xl border-white/10 bg-[#090909] pl-11 text-white placeholder:text-zinc-600 focus-visible:ring-red-500/50"
               />
+
               {search && (
                 <button
+                  type="button"
                   onClick={() => setSearch("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-500 transition hover:text-white"
                   aria-label="Limpiar búsqueda"
@@ -377,11 +583,12 @@ export default function ProductosPage() {
                 onChange={(event) =>
                   setStockFilter(event.target.value as StockFilter)
                 }
-                className="h-12 min-w-0 flex-1 rounded-xl border border-white/10 bg-[#090909] px-3 text-sm text-zinc-200 outline-none transition focus:border-red-500/50 sm:min-w-[160px]"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-white/10 bg-[#090909] px-3 text-sm text-zinc-200 outline-none transition focus:border-red-500/50 sm:min-w-[170px]"
               >
-                <option value="all">Todo el stock</option>
+                <option value="all">Todo el inventario</option>
                 <option value="available">Disponible</option>
                 <option value="unavailable">Sin stock</option>
+                <option value="low">Stock bajo</option>
               </select>
             </div>
           </div>
@@ -401,6 +608,7 @@ export default function ProductosPage() {
 
             {hasActiveFilters && (
               <button
+                type="button"
                 onClick={clearFilters}
                 className="text-xs font-semibold text-red-400 transition hover:text-red-300"
               >
@@ -415,7 +623,9 @@ export default function ProductosPage() {
       <div>
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold">Catálogo de productos</h2>
+            <h2 className="text-lg font-bold">
+              Catálogo de productos
+            </h2>
             <p className="mt-1 text-sm text-zinc-500">
               Gestioná cada artículo de tu tienda.
             </p>
@@ -485,7 +695,14 @@ export default function ProductosPage() {
                   ? (margin / Number(product.price)) * 100
                   : 0;
 
+              const stock = getStockInfo(product);
               const isDeleting = deletingId === product._id;
+
+              const stockBadge = stock.lowStock
+                ? "border-amber-500/20 bg-amber-500/15 text-amber-400"
+                : stock.available
+                  ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-400"
+                  : "border-red-500/20 bg-red-500/15 text-red-400";
 
               return (
                 <Card
@@ -508,19 +725,17 @@ export default function ProductosPage() {
                     )}
 
                     <div className="absolute left-3 top-3">
-                      <Badge
-                        className={
-                          product.inStock
-                            ? "border border-emerald-500/20 bg-emerald-500/15 text-emerald-400 backdrop-blur-md hover:bg-emerald-500/15"
-                            : "border border-red-500/20 bg-red-500/15 text-red-400 backdrop-blur-md hover:bg-red-500/15"
-                        }
-                      >
-                        {product.inStock ? "Disponible" : "Sin stock"}
+                      <Badge className={`${stockBadge} backdrop-blur-md`}>
+                        {stock.lowStock
+                          ? "Stock bajo"
+                          : stock.available
+                            ? "Disponible"
+                            : "Agotado"}
                       </Badge>
                     </div>
 
                     <div className="absolute right-3 top-3">
-                      <Badge className="border border-white/10 bg-black/60 text-zinc-200 backdrop-blur-md hover:bg-black/60">
+                      <Badge className="border border-white/10 bg-black/60 text-zinc-200 backdrop-blur-md">
                         {product.category}
                       </Badge>
                     </div>
@@ -575,6 +790,42 @@ export default function ProductosPage() {
                       </span>
                     </div>
 
+                    {/* STOCK */}
+                    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {stock.mode === "sizes" ? (
+                            <Ruler className="h-4 w-4 text-zinc-400" />
+                          ) : stock.mode === "variants" ? (
+                            <Layers className="h-4 w-4 text-zinc-400" />
+                          ) : (
+                            <Boxes className="h-4 w-4 text-zinc-400" />
+                          )}
+
+                          <span className="text-xs font-semibold text-zinc-300">
+                            {stock.label}
+                          </span>
+                        </div>
+
+                        {stock.quantity !== null && (
+                          <span className="text-sm font-bold tabular-nums text-white">
+                            {stock.quantity} u.
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-1 text-[11px] text-zinc-500">
+                        {stock.detail}
+                      </p>
+
+                      {stock.lowStock && (
+                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          Requiere reposición
+                        </div>
+                      )}
+                    </div>
+
                     {/* COSTS */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3">
@@ -609,20 +860,42 @@ export default function ProductosPage() {
                       </span>
                     </div>
 
-                    {/* SIZES */}
+                    {/* SIZES / VARIANTS */}
                     <div className="border-t border-white/[0.06] pt-3">
                       <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                        Talles / opciones
+                        Talles y opciones
                       </p>
 
                       <div className="flex min-h-7 flex-wrap gap-1.5">
                         {product.sizes?.length ? (
-                          product.sizes.map((size, index) => (
+                          product.sizes.map((size, index) => {
+                            const sizeItem = product.sizeStock?.find(
+                              (item) => item.size === size
+                            );
+
+                            return (
+                              <span
+                                key={`${size}-${index}`}
+                                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-zinc-300"
+                              >
+                                {size}
+                                {stock.mode === "sizes" && sizeItem
+                                  ? ` · ${sizeItem.stockQuantity}`
+                                  : ""}
+                              </span>
+                            );
+                          })
+                        ) : product.variants?.length ? (
+                          product.variants.map((variant, index) => (
                             <span
-                              key={`${size}-${index}`}
+                              key={`${variant.label}-${index}`}
                               className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium text-zinc-300"
                             >
-                              {size}
+                              {variant.label}
+                              {stock.mode === "variants" &&
+                              variant.stockQuantity != null
+                                ? ` · ${variant.stockQuantity}`
+                                : ""}
                             </span>
                           ))
                         ) : (
@@ -670,11 +943,7 @@ export default function ProductosPage() {
       {/* MODAL */}
       <ProductModal
         isOpen={isModalOpen}
-        onClose={() => {
-          if (!isModalOpen) return;
-          setIsModalOpen(false);
-          setSelectedProduct(null);
-        }}
+        onClose={closeModal}
         onSave={handleSaveProduct}
         product={selectedProduct}
       />

@@ -16,6 +16,7 @@ cloudinary.config({
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_EXTRA_IMAGES = 6;
 const MAX_VARIANTS = 40;
+const STOCK_MODES = ["legacy", "simple", "sizes", "variants"];
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -63,40 +64,117 @@ function toNumber(value, fieldName, options = {}) {
   return number;
 }
 
-function slug(value) {
-  return text(value, 120)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "producto";
-}
-
-function assertImage(file, label) {
-  if (!file || typeof file.arrayBuffer !== "function" || !file.size) {
-    throw new HttpError(400, `${label}: archivo inválido.`);
+function parseJson(raw, fieldName, fallback = []) {
+  if (raw === null || raw === undefined || raw === "") {
+    return fallback;
   }
-
-  if (!String(file.type).startsWith("image/")) {
-    throw new HttpError(400, `${label}: solo se permiten imágenes.`);
-  }
-
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new HttpError(400, `${label}: supera los 5 MB.`);
-  }
-}
-
-function parseVariants(raw) {
-  if (!raw) return [];
-
-  let list;
 
   try {
-    list = JSON.parse(raw);
+    return JSON.parse(raw);
   } catch {
-    throw new HttpError(400, "variants no es un JSON válido.");
+    throw new HttpError(400, `${fieldName} no contiene un JSON válido.`);
   }
+}
+
+function parseStockMode(value) {
+  const mode = text(value, 20) || "legacy";
+
+  if (!STOCK_MODES.includes(mode)) {
+    throw new HttpError(400, "El modo de inventario no es válido.");
+  }
+
+  return mode;
+}
+
+function parseSizes(form) {
+  return [
+    ...new Set(
+      form
+        .getAll("sizes")
+        .map((size) => text(size, 20))
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function parseSizeStock(raw, sizes) {
+  const list = parseJson(raw, "sizeStock");
+
+  if (!Array.isArray(list)) {
+    throw new HttpError(400, "El inventario por talle debe ser una lista.");
+  }
+
+  if (list.length > 100) {
+    throw new HttpError(400, "Hay demasiados registros de stock por talle.");
+  }
+
+  const seen = new Set();
+
+  const parsed = list.map((item, index) => {
+    const size = text(item?.size, 20);
+
+    if (!size) {
+      throw new HttpError(
+        400,
+        `El registro de stock ${index + 1} no tiene un talle válido.`
+      );
+    }
+
+    const key = size.toLowerCase();
+
+    if (seen.has(key)) {
+      throw new HttpError(400, `El talle "${size}" está duplicado.`);
+    }
+
+    seen.add(key);
+
+    return {
+      size,
+      stockQuantity: toNumber(
+        item?.stockQuantity,
+        `Stock del talle "${size}"`,
+        { min: 0 }
+      ),
+      minStock: toNumber(
+        item?.minStock,
+        `Stock mínimo del talle "${size}"`,
+        { optional: true, min: 0 }
+      ) ?? 0,
+    };
+  });
+
+  if (sizes.length === 0) {
+    throw new HttpError(
+      400,
+      "Agregá al menos un talle para usar inventario por talle."
+    );
+  }
+
+  const sizeNames = new Set(sizes.map((size) => size.toLowerCase()));
+
+  for (const item of parsed) {
+    if (!sizeNames.has(item.size.toLowerCase())) {
+      throw new HttpError(
+        400,
+        `El talle "${item.size}" no está incluido en la lista de talles.`
+      );
+    }
+  }
+
+  for (const size of sizes) {
+    if (!seen.has(size.toLowerCase())) {
+      throw new HttpError(
+        400,
+        `Falta configurar el stock del talle "${size}".`
+      );
+    }
+  }
+
+  return parsed;
+}
+
+function parseVariants(raw, { requireStock = false } = {}) {
+  const list = parseJson(raw, "variants");
 
   if (!Array.isArray(list) || list.length > MAX_VARIANTS) {
     throw new HttpError(
@@ -121,6 +199,18 @@ function parseVariants(raw) {
       { optional: true, min: 0 }
     );
 
+    const stockQuantity = toNumber(
+      variant?.stockQuantity,
+      `Stock de la variante "${label}"`,
+      { optional: !requireStock, min: 0 }
+    );
+
+    const minStock = toNumber(
+      variant?.minStock,
+      `Stock mínimo de la variante "${label}"`,
+      { optional: true, min: 0 }
+    );
+
     const imageIndex =
       Number.isInteger(variant?.imageIndex) &&
       variant.imageIndex >= 0
@@ -131,11 +221,109 @@ function parseVariants(raw) {
       label,
       group: text(variant?.group, 150) || undefined,
       price: price ?? undefined,
-      inStock: variant?.inStock !== false,
+      inStock:
+        stockQuantity !== null
+          ? stockQuantity > 0
+          : variant?.inStock !== false,
       note: text(variant?.note, 200) || undefined,
+      image: text(variant?.image, 1000) || undefined,
       imageIndex,
+      stockQuantity,
+      minStock: minStock ?? 0,
     };
   });
+}
+
+function calculateAvailability({
+  stockMode,
+  inStock,
+  stockQuantity,
+  sizeStock,
+  variants,
+}) {
+  if (stockMode === "simple") {
+    return stockQuantity > 0;
+  }
+
+  if (stockMode === "sizes") {
+    return sizeStock.some((item) => item.stockQuantity > 0);
+  }
+
+  if (stockMode === "variants") {
+    return variants.some((item) => item.stockQuantity > 0);
+  }
+
+  return inStock;
+}
+
+function validateInventory({
+  stockMode,
+  stockQuantity,
+  sizeStock,
+  variants,
+  inStock,
+}) {
+  if (stockMode === "simple" && stockQuantity === null) {
+    throw new HttpError(
+      400,
+      "Ingresá la cantidad disponible del producto."
+    );
+  }
+
+  if (stockMode === "sizes" && sizeStock.length === 0) {
+    throw new HttpError(
+      400,
+      "Configurá el inventario de cada talle."
+    );
+  }
+
+  if (stockMode === "variants") {
+    if (variants.length === 0) {
+      throw new HttpError(
+        400,
+        "Agregá al menos una variante para configurar su inventario."
+      );
+    }
+
+    if (variants.some((variant) => variant.stockQuantity === null)) {
+      throw new HttpError(
+        400,
+        "Todas las variantes deben tener una cantidad de stock."
+      );
+    }
+  }
+
+  return calculateAvailability({
+    stockMode,
+    inStock,
+    stockQuantity,
+    sizeStock,
+    variants,
+  });
+}
+
+function slug(value) {
+  return text(value, 120)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "producto";
+}
+
+function assertImage(file, label) {
+  if (!file || typeof file.arrayBuffer !== "function" || !file.size) {
+    throw new HttpError(400, `${label}: archivo inválido.`);
+  }
+
+  if (!String(file.type).startsWith("image/")) {
+    throw new HttpError(400, `${label}: solo se permiten imágenes.`);
+  }
+
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new HttpError(400, `${label}: supera los 5 MB.`);
+  }
 }
 
 async function uploadImage(file, folder) {
@@ -178,10 +366,20 @@ export async function GET(req) {
       .sort({ _id: -1 })
       .lean();
 
-    // Los visitantes nunca reciben información de costos ni IDs internos
-    // de Cloudinary.
     if (!admin) {
-      query.select("-costPrice -imagePublicId -__v");
+      query.select(
+        [
+          "-costPrice",
+          "-imagePublicId",
+          "-stockQuantity",
+          "-minStock",
+          "-sizeStock.stockQuantity",
+          "-sizeStock.minStock",
+          "-variants.stockQuantity",
+          "-variants.minStock",
+          "-__v",
+        ].join(" ")
+      );
     }
 
     const products = await query;
@@ -230,7 +428,6 @@ export async function POST(req) {
 
     const form = await req.formData();
 
-    // Datos generales
     const name = text(form.get("name"), 120);
     const description = text(form.get("description"), 4000);
     const category = text(form.get("category"), 60);
@@ -243,24 +440,34 @@ export async function POST(req) {
       throw new HttpError(400, "La categoría es obligatoria.");
     }
 
-    // Etiquetas adicionales
     const groupLabel = text(form.get("groupLabel"), 40) || undefined;
     const optionLabel = text(form.get("optionLabel"), 40) || undefined;
 
-    // Tallas
-    const sizes = [
-      ...new Set(
-        form
-          .getAll("sizes")
-          .map((size) => text(size, 20))
-          .filter(Boolean)
-      ),
-    ];
+    const sizes = parseSizes(form);
 
-    // Variantes
-    const variants = parseVariants(form.get("variants"));
+    const stockMode = parseStockMode(form.get("stockMode"));
 
-    // Precios
+    const stockQuantity = toNumber(
+      form.get("stockQuantity"),
+      "El stock general",
+      { optional: true, min: 0 }
+    );
+
+    const minStock = toNumber(
+      form.get("minStock"),
+      "El stock mínimo",
+      { optional: true, min: 0 }
+    ) ?? 0;
+
+    const sizeStock =
+      stockMode === "sizes"
+        ? parseSizeStock(form.get("sizeStock"), sizes)
+        : [];
+
+    let variants = parseVariants(form.get("variants"), {
+      requireStock: stockMode === "variants",
+    });
+
     let price = toNumber(form.get("price"), "El precio", {
       optional: true,
       min: 0.01,
@@ -303,20 +510,25 @@ export async function POST(req) {
 
     const rating = ratingRaw ?? 5;
 
-    // Stock
     const stockValue = form.get("inStock");
 
     if (stockValue !== "true" && stockValue !== "false") {
       throw new HttpError(400, "El estado del stock no es válido.");
     }
 
-    const inStock = stockValue === "true";
+    const requestedInStock = stockValue === "true";
 
-    // Imagen principal obligatoria
+    const inStock = validateInventory({
+      stockMode,
+      stockQuantity,
+      sizeStock,
+      variants,
+      inStock: requestedInStock,
+    });
+
     const mainFile = form.get("image");
     assertImage(mainFile, "Imagen principal");
 
-    // Imágenes adicionales opcionales
     const extraFiles = form
       .getAll("images")
       .filter((file) => file && file.size > 0);
@@ -332,7 +544,6 @@ export async function POST(req) {
       assertImage(file, `Imagen adicional ${index + 1}`);
     });
 
-    // Comprobar referencias a imágenes de variantes
     for (const variant of variants) {
       if (
         variant.imageIndex !== undefined &&
@@ -345,7 +556,6 @@ export async function POST(req) {
       }
     }
 
-    // Subir imágenes a Cloudinary
     const folder = `products/${slug(name)}`;
     const results = [];
 
@@ -358,7 +568,14 @@ export async function POST(req) {
 
     const urls = results.map((result) => result.secure_url);
 
-    // Crear producto
+    variants = variants.map(({ imageIndex, ...variant }) => ({
+      ...variant,
+      image:
+        imageIndex !== undefined
+          ? urls[imageIndex]
+          : variant.image,
+    }));
+
     const product = await Product.create({
       name,
       description,
@@ -374,18 +591,20 @@ export async function POST(req) {
       sizes,
       groupLabel,
       optionLabel,
-      variants: variants.map(({ imageIndex, ...variant }) => ({
-        ...variant,
-        image:
-          imageIndex !== undefined
-            ? urls[imageIndex]
-            : undefined,
-      })),
+      variants,
+      stockMode,
+      stockQuantity:
+        stockMode === "simple" ? stockQuantity : null,
+      minStock:
+        stockMode === "simple" ? minStock : 0,
+      sizeStock:
+        stockMode === "sizes" ? sizeStock : [],
     });
 
-    return json(product.toObject(), 201);
+    return json(product.toObject(), 201, {
+      "Cache-Control": "no-store",
+    });
   } catch (error) {
-    // Si falla la creación, limpiar todas las imágenes subidas.
     if (uploadedPublicIds.length > 0) {
       await Promise.allSettled(
         uploadedPublicIds.map((publicId) =>
