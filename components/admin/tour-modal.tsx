@@ -1,328 +1,542 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Save, X, Plus, Trash2, Calendar } from "lucide-react";
+import {
+  MapPin,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Calendar,
+  ImagePlus,
+  Loader2,
+} from "lucide-react";
 import { Tour } from "@/components/types/tour";
 
 interface TourModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (tour: Tour & { imageFile?: File | undefined }) => Promise<void>;
+  onSave: (tour: Tour & { imageFile?: File }) => Promise<void>;
   tour?: Tour | null;
 }
 
-export function TourModal({ isOpen, onClose, onSave, tour }: TourModalProps) {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    destination: "",
-    dates: [] as string[],
-    price: 0,
-    image: "",
-    grupo: "",
+type TourForm = {
+  title: string;
+  description: string;
+  destination: string;
+  dates: string[];
+  price: number;
+  image: string;
+  grupo: string;
+};
+
+function getLocalDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(`${dateString}T12:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  return date.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
-  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
+}
+
+function getInitialForm(tour?: Tour | null): TourForm {
+  return {
+    title: tour?.title || "",
+    description: tour?.description || "",
+    destination: tour?.destination || "",
+    dates: Array.isArray(tour?.dates) ? [...tour.dates] : [],
+    price: Number(tour?.price) || 0,
+    image: tour?.image || "",
+    grupo: tour?.grupo || "",
+  };
+}
+
+export function TourModal({
+  isOpen,
+  onClose,
+  onSave,
+  tour,
+}: TourModalProps) {
+  const [formData, setFormData] = useState<TourForm>(() =>
+    getInitialForm(tour)
+  );
+  const [imageFile, setImageFile] = useState<File | undefined>();
+  const [previewImage, setPreviewImage] = useState("");
   const [newDate, setNewDate] = useState("");
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-  if (tour) {
-    const parsedDates = typeof tour.dates === "string" ? JSON.parse(tour.dates) : tour.dates;
+    if (!isOpen) return;
 
-    setFormData({
-      title: tour.title,
-      description: tour.description,
-      destination: tour.destination,
-      dates: Array.isArray(parsedDates) ? parsedDates : [],
-      price: Number(tour.price), // también lo convertimos a número si es string
-      image: tour.image || "",
-      grupo: tour.grupo || "",
-    });
+    setFormData(getInitialForm(tour));
     setImageFile(undefined);
-  } else {
-    setFormData({
-      title: "",
-      description: "",
-      destination: "",
-      dates: [],
-      price: 0,
-      image: "",
-      grupo: "",
-    });
-    setImageFile(undefined);
-  }
-  setErrors({});
-  setNewDate("");
-}, [tour, isOpen]);
+    setPreviewImage(tour?.image || "");
+    setNewDate("");
+    setErrors({});
+    setSubmitError("");
+  }, [tour, isOpen]);
 
-
+  // Crea y revoca la URL temporal de la imagen seleccionada.
   useEffect(() => {
-    let objectUrl: string | undefined;
-    if (imageFile) {
-      objectUrl = URL.createObjectURL(imageFile);
-      setFormData((prev) => ({ ...prev, image: objectUrl || "" })); // <-- forzamos string
+    if (!imageFile) {
+      setPreviewImage(tour?.image || "");
+      return;
     }
+
+    const objectUrl = URL.createObjectURL(imageFile);
+    setPreviewImage(objectUrl);
+
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      URL.revokeObjectURL(objectUrl);
     };
-  }, [imageFile]);
+  }, [imageFile, tour?.image]);
 
+  const handleInputChange = <K extends keyof TourForm>(
+    field: K,
+    value: TourForm[K]
+  ) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-    if (!formData.title.trim()) newErrors.title = "El título es requerido";
-    if (!formData.description.trim()) newErrors.description = "La descripción es requerida";
-    if (!formData.destination.trim()) newErrors.destination = "El destino es requerido";
-    if (formData.price <= 0) newErrors.price = "El precio debe ser mayor a 0";
-    if (formData.dates.length === 0) newErrors.dates = "Debe agregar al menos una fecha";
-    if (!tour && !imageFile && !formData.image) newErrors.image = "La imagen es requerida";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors((previous) => ({
+      ...previous,
+      [field]: "",
+    }));
+
+    setSubmitError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm() || isSubmitting) return;
+  const handleImageChange = (file?: File) => {
+    setImageFile(file);
+    setErrors((previous) => ({
+      ...previous,
+      image: "",
+    }));
+  };
+
+  const addDate = () => {
+    if (!newDate) return;
+
+    if (formData.dates.includes(newDate)) {
+      setErrors((previous) => ({
+        ...previous,
+        dates: "Esa fecha ya fue agregada.",
+      }));
+      return;
+    }
+
+    const dates = [...formData.dates, newDate].sort();
+
+    setFormData((previous) => ({
+      ...previous,
+      dates,
+    }));
+
+    setNewDate("");
+    setErrors((previous) => ({
+      ...previous,
+      dates: "",
+    }));
+  };
+
+  const removeDate = (dateToRemove: string) => {
+    setFormData((previous) => ({
+      ...previous,
+      dates: previous.dates.filter((date) => date !== dateToRemove),
+    }));
+  };
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      nextErrors.title = "El título es obligatorio.";
+    }
+
+    if (!formData.description.trim()) {
+      nextErrors.description = "La descripción es obligatoria.";
+    }
+
+    if (!formData.destination.trim()) {
+      nextErrors.destination = "El destino es obligatorio.";
+    }
+
+    if (!Number.isFinite(formData.price) || formData.price <= 0) {
+      nextErrors.price = "El precio debe ser mayor a cero.";
+    }
+
+    if (formData.dates.length === 0) {
+      nextErrors.dates = "Agregá al menos una fecha disponible.";
+    }
+
+    if (!tour && !imageFile) {
+      nextErrors.image = "Seleccioná una imagen para el tour.";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting || !validateForm()) return;
+
     setIsSubmitting(true);
+    setSubmitError("");
 
     try {
-      const tourData = { ...formData, imageFile };
-      await onSave(tourData);
+      await onSave({
+        ...formData,
+        dates: [...formData.dates].sort(),
+        imageFile,
+      });
+
       onClose();
     } catch (error) {
-      alert("Error al guardar el tour");
-      console.error(error);
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar el tour. Intentá nuevamente."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  const addDate = () => {
-    if (newDate && !formData.dates.includes(newDate)) {
-      const sortedDates = [...formData.dates, newDate].sort();
-      setFormData((prev) => ({ ...prev, dates: sortedDates }));
-      setNewDate("");
-      if (errors.dates) setErrors((prev) => ({ ...prev, dates: "" }));
-    }
-  };
-
-  const removeDate = (dateToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      dates: prev.dates.filter((date) => date !== dateToRemove),
-    }));
-  };
-
-  const formatDateForDisplay = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="bg-card border-border text-card-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <MapPin className="w-5 h-5 text-accent" />
-            {tour ? "Editar Tour" : "Nuevo Tour"}
-          </DialogTitle>
-        </DialogHeader>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !isSubmitting) onClose();
+      }}
+    >
+      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto border-white/10 bg-[#101010] p-0 text-white shadow-2xl">
+        <div className="border-b border-white/10 bg-gradient-to-r from-red-950/40 via-[#151515] to-[#101010] px-6 py-6 sm:px-8">
+          <DialogHeader>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10">
+              <MapPin className="h-5 w-5 text-red-400" />
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
-          {formData.image && (
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-muted max-w-2xl">
-              <img
-                src={formData.image}
-                alt={formData.title || "Vista previa"}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
+            <DialogTitle className="text-2xl font-bold tracking-tight text-white">
+              {tour ? "Editar experiencia" : "Crear nuevo tour"}
+            </DialogTitle>
+
+            <p className="mt-1 text-sm text-zinc-400">
+              Completá los detalles de la experiencia y sus próximas salidas.
+            </p>
+          </DialogHeader>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-7 p-6 sm:p-8">
+          {submitError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            >
+              {submitError}
             </div>
           )}
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
+          <div className="grid gap-7 lg:grid-cols-[1fr_0.85fr]">
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium">
-                  Título del Tour *
+                <Label htmlFor="tour-title" className="text-zinc-200">
+                  Nombre del tour *
                 </Label>
                 <Input
-                  id="title"
+                  id="tour-title"
                   value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  placeholder="Ej: Aventura en los Andes"
-                  className={`bg-input border-border ${errors.title ? "border-destructive" : ""}`}
+                  onChange={(event) =>
+                    handleInputChange("title", event.target.value)
+                  }
+                  placeholder="Ej. Aventura en los Andes"
                   disabled={isSubmitting}
+                  className="h-11 border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
                 />
-                {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-xs text-red-400">{errors.title}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
+                <Label htmlFor="tour-description" className="text-zinc-200">
                   Descripción *
                 </Label>
                 <Textarea
-                  id="description"
+                  id="tour-description"
                   value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  placeholder="Describe la experiencia del tour..."
-                  rows={4}
-                  className={`bg-input border-border resize-none ${errors.description ? "border-destructive" : ""}`}
+                  onChange={(event) =>
+                    handleInputChange("description", event.target.value)
+                  }
+                  placeholder="Contá qué hace especial a esta experiencia..."
+                  rows={5}
                   disabled={isSubmitting}
+                  className="resize-none border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
                 />
-                {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+                {errors.description && (
+                  <p className="text-xs text-red-400">
+                    {errors.description}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="destination" className="text-sm font-medium">
+                <Label htmlFor="tour-destination" className="text-zinc-200">
                   Destino *
                 </Label>
                 <Input
-                  id="destination"
+                  id="tour-destination"
                   value={formData.destination}
-                  onChange={(e) => handleInputChange("destination", e.target.value)}
-                  placeholder="Ej: Cordillera de los Andes"
-                  className={`bg-input border-border ${errors.destination ? "border-destructive" : ""}`}
+                  onChange={(event) =>
+                    handleInputChange("destination", event.target.value)
+                  }
+                  placeholder="Ej. Cordillera de los Andes"
                   disabled={isSubmitting}
+                  className="h-11 border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
                 />
-                {errors.destination && <p className="text-sm text-destructive">{errors.destination}</p>}
+                {errors.destination && (
+                  <p className="text-xs text-red-400">
+                    {errors.destination}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image" className="text-sm font-medium">
-                  Imagen *
+                <Label htmlFor="tour-group" className="text-zinc-200">
+                  Categoría o grupo
                 </Label>
                 <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      setImageFile(e.target.files[0]);
-                    } else {
-                      setImageFile(undefined);
-                    }
-                  }}
-                  className={`bg-input border-border ${errors.image ? "border-destructive" : ""}`}
+                  id="tour-group"
+                  value={formData.grupo}
+                  onChange={(event) =>
+                    handleInputChange("grupo", event.target.value)
+                  }
+                  placeholder="Ej. Aventura, Cultural, Relax"
                   disabled={isSubmitting}
+                  className="h-11 border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
                 />
-                {errors.image && <p className="text-sm text-destructive">{errors.image}</p>}
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-sm font-medium">
+                <Label htmlFor="tour-price" className="text-zinc-200">
                   Precio *
                 </Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange("price", Number.parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                  className={`bg-input border-border ${errors.price ? "border-destructive" : ""}`}
-                  disabled={isSubmitting}
-                />
-                {errors.price && <p className="text-sm text-destructive">{errors.price}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="grupo" className="text-sm font-medium">
-                  Grupo (Opcional)
-                </Label>
-                <Input
-                  id="grupo"
-                  value={formData.grupo}
-                  onChange={(e) => handleInputChange("grupo", e.target.value)}
-                  placeholder="Ej: Aventura Extrema, Cultural, Relax & Spa"
-                  className="bg-input border-border"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Fechas Disponibles *</Label>
-                <div className="flex gap-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                    $
+                  </span>
                   <Input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    className="bg-input border-border"
-                    min={new Date().toISOString().split("T")[0]}
+                    id="tour-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price || ""}
+                    onChange={(event) =>
+                      handleInputChange(
+                        "price",
+                        Number(event.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
                     disabled={isSubmitting}
+                    className="h-11 border-white/10 bg-white/[0.04] pl-8 text-white placeholder:text-zinc-600 focus-visible:ring-red-500/40"
                   />
-                  <Button
-                    type="button"
-                    onClick={addDate}
-                    size="sm"
-                    variant="outline"
-                    className="border-border bg-transparent"
-                    disabled={isSubmitting}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto">
-                  {formData.dates.map((date) => (
-                    <Badge key={date} variant="secondary" className="bg-muted text-muted-foreground">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDateForDisplay(date)}
-                      <button
-                        type="button"
-                        onClick={() => removeDate(date)}
-                        className="ml-2 hover:text-destructive"
-                        disabled={isSubmitting}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-                {errors.dates && <p className="text-sm text-destructive">{errors.dates}</p>}
+                {errors.price && (
+                  <p className="text-xs text-red-400">{errors.price}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-200">Imagen del tour *</Label>
+
+                <label
+                  htmlFor="tour-image"
+                  className="group flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-white/15 bg-white/[0.025] transition hover:border-red-500/50 hover:bg-red-500/[0.04]"
+                >
+                  {previewImage ? (
+                    <div className="relative aspect-[16/10] w-full">
+                      <img
+                        src={previewImage}
+                        alt="Vista previa del tour"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition group-hover:opacity-100">
+                        <span className="flex items-center gap-2 text-sm font-medium text-white">
+                          <ImagePlus className="h-4 w-4" />
+                          Cambiar imagen
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex min-h-44 flex-col items-center justify-center gap-3 p-6 text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06] text-zinc-400">
+                        <ImagePlus className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-zinc-200">
+                          Seleccioná una imagen
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">
+                          JPG, PNG o WEBP · Máximo 10 MB
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </label>
+
+                <input
+                  id="tour-image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  disabled={isSubmitting}
+                  onChange={(event) => {
+                    handleImageChange(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+
+                {errors.image && (
+                  <p className="text-xs text-red-400">{errors.image}</p>
+                )}
+
+                {tour && (
+                  <p className="text-xs text-zinc-500">
+                    Si no seleccionás una imagen nueva, se conserva la actual.
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+          <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.025] p-5">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-red-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Fechas disponibles
+                </h3>
+                <p className="text-xs text-zinc-500">
+                  Agregá las fechas en las que se realizará el tour.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                type="date"
+                value={newDate}
+                min={getLocalDate()}
+                onChange={(event) => setNewDate(event.target.value)}
+                disabled={isSubmitting}
+                className="h-11 border-white/10 bg-white/[0.04] text-white [color-scheme:dark] focus-visible:ring-red-500/40"
+              />
+
+              <Button
+                type="button"
+                onClick={addDate}
+                disabled={!newDate || isSubmitting}
+                className="h-11 shrink-0 bg-red-600 text-white hover:bg-red-500"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar fecha
+              </Button>
+            </div>
+
+            {errors.dates && (
+              <p className="text-xs text-red-400">{errors.dates}</p>
+            )}
+
+            {formData.dates.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {formData.dates.map((date) => (
+                  <Badge
+                    key={date}
+                    className="gap-2 border border-white/10 bg-white/[0.06] px-3 py-2 text-zinc-200 hover:bg-white/[0.08]"
+                  >
+                    <Calendar className="h-3 w-3 text-red-400" />
+                    {formatDate(date)}
+                    <button
+                      type="button"
+                      aria-label={`Eliminar fecha ${date}`}
+                      onClick={() => removeDate(date)}
+                      disabled={isSubmitting}
+                      className="ml-1 text-zinc-500 transition hover:text-red-400"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg border border-dashed border-white/10 py-5 text-center text-xs text-zinc-500">
+                Todavía no agregaste fechas.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-border bg-transparent"
               disabled={isSubmitting}
+              className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/[0.06] hover:text-white"
             >
-              <X className="w-4 h-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>
+
             <Button
               type="submit"
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
               disabled={isSubmitting}
+              className="bg-red-600 text-white shadow-lg shadow-red-950/30 hover:bg-red-500"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {tour ? "Actualizar" : "Guardar"}
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isSubmitting
+                ? "Guardando..."
+                : tour
+                  ? "Guardar cambios"
+                  : "Crear tour"}
             </Button>
           </div>
         </form>

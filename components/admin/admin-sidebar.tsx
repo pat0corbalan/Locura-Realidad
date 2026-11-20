@@ -1,149 +1,120 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { 
-  Camera, 
-  Package, 
-  MapPin, 
-  Users, 
-  LayoutDashboard, 
-  Menu, 
-  X, 
-  Ticket,
-  LogOut
-} from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Camera, Package, MapPin, LayoutDashboard, Menu, X, Ticket,
+  LogOut, Images, ExternalLink, Music2,
+} from "lucide-react";
 
 const navigation = [
-  {
-    name: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
-  {
-    // Esta es la nueva sección para gestionar lo que llega del Modal
-    name: "Eventos", 
-    href: "/admin/reservas",
-    icon: Ticket,
-  },
-  {
-    name: "Fotos",
-    href: "/admin/fotos",
-    icon: Camera,
-  },
-  {
-    name: "Productos",
-    href: "/admin/productos",
-    icon: Package,
-  },
-  {
-    name: "Tours",
-    href: "/admin/tours",
-    icon: MapPin,
-  },
-  {
-    name: "Album",
-    href: "/admin/albums",
-    icon: Users,
-  },
-]
+  { label: "Resumen", items: [{ name: "Dashboard", href: "/admin", icon: LayoutDashboard }] },
+  { label: "Contenido", items: [
+    { name: "Eventos y reservas", href: "/admin/reservas", icon: Ticket },
+    { name: "Tours", href: "/admin/tours", icon: MapPin },
+    { name: "Productos", href: "/admin/productos", icon: Package },
+  ]},
+  { label: "Multimedia", items: [
+    { name: "Galería de fotos", href: "/admin/fotos", icon: Camera },
+    { name: "Álbumes", href: "/admin/albums", icon: Images },
+  ]},
+];
 
 export function AdminSidebar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
-      await fetch("/api/admin/logout", { method: "POST" })
+      await fetch("/api/admin/logout", { method: "POST" });
     } finally {
-      router.replace("/login")
-      router.refresh()
+      router.replace("/login");
+      router.refresh();
     }
-  }
+  };
 
   return (
     <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden bg-card text-card-foreground"
-        onClick={() => setIsOpen(!isOpen)}
+      <button
+        type="button"
+        className="admin-mobile-toggle"
+        aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((value) => !value)}
       >
-        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </Button>
+        {isOpen ? <X size={19} /> : <Menu size={19} />}
+      </button>
 
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        )}
-      >
-        <div className="h-full flex flex-col bg-background"> {/* Cambié container por un div flex para mejor control */}
-          <div className="px-6 py-8">
-            <h1 className="text-2xl font-bold text-foreground text-rock-shadow">
-              Locura{" "}
-              <span
-                className="text-black"
-                style={{
-                  textShadow:
-                    "0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 40px #ff0000",
-                }}
-              >
-                &amp;
-              </span>{" "}
-              Realidad
-            </h1>
+      <div className="admin-sidebar-backdrop" data-open={isOpen} onClick={() => setIsOpen(false)} />
+
+      <aside className="admin-sidebar" data-open={isOpen}>
+        <Link href="/admin" className="admin-brand" onClick={() => setIsOpen(false)}>
+          <span className="admin-brand-mark"><Music2 size={22} strokeWidth={2.5} /></span>
+          <span>
+            <span className="admin-brand-name block">LOCURA <span className="text-red-400">&amp;</span> REALIDAD</span>
+            <span className="admin-brand-sub block">Panel de administración</span>
+          </span>
+        </Link>
+
+        <nav className="flex-1 overflow-y-auto" aria-label="Navegación del administrador">
+          {navigation.map((group) => (
+            <div key={group.label} className="mb-3">
+              <p className="admin-nav-label">{group.label}</p>
+              {group.items.map((item) => {
+                const active = item.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="admin-nav-link"
+                    data-active={active}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Icon size={17} strokeWidth={1.8} />
+                    <span>{item.name}</span>
+                    {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-red-400" />}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <Link href="/" target="_blank" rel="noreferrer" className="admin-nav-link mb-2">
+            <ExternalLink size={16} />
+            <span>Ver sitio web</span>
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="admin-nav-link w-full text-left hover:!border-red-500/20 hover:!bg-red-500/10 hover:!text-red-300 disabled:opacity-50"
+          >
+            <LogOut size={16} />
+            <span>{isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+          </button>
+          <div className="admin-profile mt-3">
+            <div className="admin-profile-avatar">LR</div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-white">Locura &amp; Realidad</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">Administrador</p>
+            </div>
+            <span className="ml-auto h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.5)]" />
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
-                  )}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <item.icon className={cn("w-5 h-5 mr-3", isActive ? "text-primary-foreground" : "text-primary")} />
-                  {item.name}
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="space-y-3 border-t border-sidebar-border bg-card/30 p-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full justify-start gap-3"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4" />
-              Cerrar sesión
-            </Button>
-            <p className="text-center text-xs font-medium text-muted-foreground">
-              Locura & Realidad Admin v1.2
-            </p>
-          </div>
+          <p className="px-2 pt-3 text-center text-[9px] tracking-[.16em] text-muted-foreground/60">ADMIN CONSOLE · V2.0</p>
         </div>
-      </div>
-
-      {/* Overlay for mobile */}
-      {isOpen && <div className="fixed inset-0 z-30 bg-black/50 md:hidden backdrop-blur-sm" onClick={() => setIsOpen(false)} />}
+      </aside>
     </>
-  )
+  );
 }

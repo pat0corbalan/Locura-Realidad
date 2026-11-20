@@ -2,8 +2,10 @@ import type React from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { Toaster } from "sonner";
 import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/admin-auth";
+import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +21,15 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="admin-shell dark min-h-screen">
       <AdminSidebar />
-      <div className="md:ml-64">
-        <main className="p-6 md:p-8" role="main" aria-label="Contenido principal">
+      <div className="admin-main">
+        <AdminTopbar />
+        <main className="admin-content" role="main" aria-label="Contenido principal">
           {children}
         </main>
       </div>
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" theme="dark" />
     </div>
   );
 }

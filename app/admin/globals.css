@@ -1,79 +1,72 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Bogle&family=Londrina+Shadow&display=swap');
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens for rock theme with black background, white text, and red accents */
-  --background: oklch(0 0 0); /* Black background */
-  --foreground: oklch(1 0 0); /* White text */
-  --card: oklch(0.05 0 0); /* Very dark grey for cards */
-  --card-foreground: oklch(1 0 0); /* White text on cards */
-  --popover: oklch(0.05 0 0); /* Dark popover */
-  --popover-foreground: oklch(1 0 0); /* White text on popovers */
-  --primary: oklch(0.55 0.22 25); /* Red primary color */
-  --primary-foreground: oklch(1 0 0); /* White text on primary */
-  --secondary: oklch(0.65 0.15 85); /* Golden yellow accent */
-  --secondary-foreground: oklch(0 0 0); /* Black text on secondary */
-  --muted: oklch(0.3 0 0); /* Dark grey for muted elements */
-  --muted-foreground: oklch(0.7 0 0); /* Light grey text on muted */
-  --accent: oklch(0.65 0.15 85); /* Golden yellow for accents */
-  --accent-foreground: oklch(0 0 0); /* Black text on accent */
-  --destructive: oklch(0.55 0.22 25); /* Red for destructive actions */
-  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
-  --border: oklch(0.3 0 0); /* Dark grey borders */
-  --input: oklch(0.1 0 0); /* Very dark input backgrounds */
-  --ring: oklch(0.55 0.22 25); /* Red focus rings */
-  --chart-1: oklch(0.55 0.22 25); /* Red for charts */
-  --chart-2: oklch(0.65 0.15 85); /* Golden yellow for charts */
-  --chart-3: oklch(0.3 0 0); /* Dark grey for charts */
-  --chart-4: oklch(1 0 0); /* White for charts */
-  --chart-5: oklch(0 0 0); /* Black for charts */
-  --radius: 0.5rem;
-  --sidebar: oklch(0 0 0); /* Black sidebar */
-  --sidebar-foreground: oklch(1 0 0); /* White sidebar text */
-  --sidebar-primary: oklch(0.55 0.22 25); /* Red sidebar primary */
-  --sidebar-primary-foreground: oklch(1 0 0); /* White text on sidebar primary */
-  --sidebar-accent: oklch(0.55 0.22 25); /* Golden yellow sidebar accent */
-  --sidebar-accent-foreground: oklch(0 0 0); /* Black text on sidebar accent */
-  --sidebar-border: oklch(0.3 0 0); /* Dark grey sidebar border */
-  --sidebar-ring: oklch(0.55 0.22 25); /* Red sidebar focus ring */
+  --background: oklch(0.105 0.008 260);
+  --foreground: oklch(0.96 0.006 260);
+  --card: oklch(0.145 0.009 260);
+  --card-foreground: oklch(0.96 0.006 260);
+  --popover: oklch(0.16 0.01 260);
+  --popover-foreground: oklch(0.96 0.006 260);
+  --primary: oklch(0.62 0.23 27);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.21 0.01 260);
+  --secondary-foreground: oklch(0.92 0.006 260);
+  --muted: oklch(0.20 0.009 260);
+  --muted-foreground: oklch(0.67 0.012 260);
+  --accent: oklch(0.62 0.23 27);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.62 0.23 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.27 0.012 260);
+  --input: oklch(0.18 0.01 260);
+  --ring: oklch(0.62 0.23 27);
+  --chart-1: oklch(0.62 0.23 27);
+  --chart-2: oklch(0.72 0.12 50);
+  --chart-3: oklch(0.68 0.08 220);
+  --chart-4: oklch(0.72 0.10 150);
+  --chart-5: oklch(0.75 0.08 290);
+  --radius: 0.9rem;
+  --sidebar: oklch(0.12 0.008 260);
+  --sidebar-foreground: oklch(0.96 0.006 260);
+  --sidebar-primary: oklch(0.62 0.23 27);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.19 0.01 260);
+  --sidebar-accent-foreground: oklch(0.96 0.006 260);
+  --sidebar-border: oklch(0.25 0.012 260);
+  --sidebar-ring: oklch(0.62 0.23 27);
 }
 
 .dark {
-  /* Dark mode uses same colors since we're already using a dark theme */
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.05 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.05 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.55 0.22 25);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.65 0.15 85);
-  --secondary-foreground: oklch(0 0 0);
-  --muted: oklch(0.3 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.65 0.15 85);
-  --accent-foreground: oklch(0 0 0);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.55 0.22 25);
-  --chart-1: oklch(0.55 0.22 25);
-  --chart-2: oklch(0.65 0.15 85);
-  --chart-3: oklch(0.3 0 0);
-  --chart-4: oklch(1 0 0);
-  --chart-5: oklch(0 0 0);
-  --sidebar: oklch(0 0 0);
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.22 25);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.65 0.15 85);
-  --sidebar-accent-foreground: oklch(0 0 0);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.55 0.22 25);
+  color-scheme: dark;
+  --background: oklch(0.105 0.008 260);
+  --foreground: oklch(0.96 0.006 260);
+  --card: oklch(0.145 0.009 260);
+  --card-foreground: oklch(0.96 0.006 260);
+  --popover: oklch(0.16 0.01 260);
+  --popover-foreground: oklch(0.96 0.006 260);
+  --primary: oklch(0.62 0.23 27);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.21 0.01 260);
+  --secondary-foreground: oklch(0.92 0.006 260);
+  --muted: oklch(0.20 0.009 260);
+  --muted-foreground: oklch(0.67 0.012 260);
+  --accent: oklch(0.62 0.23 27);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.62 0.23 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.27 0.012 260);
+  --input: oklch(0.18 0.01 260);
+  --ring: oklch(0.62 0.23 27);
+  --sidebar: oklch(0.12 0.008 260);
+  --sidebar-foreground: oklch(0.96 0.006 260);
+  --sidebar-primary: oklch(0.62 0.23 27);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.19 0.01 260);
+  --sidebar-accent-foreground: oklch(0.96 0.006 260);
+  --sidebar-border: oklch(0.25 0.012 260);
+  --sidebar-ring: oklch(0.62 0.23 27);
 }
 
 @theme inline {
@@ -117,70 +110,96 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Added custom rock-themed animations */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0.05;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.15;
-    transform: scale(1.2);
-  }
-}
-
-@keyframes rock-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 5px rgba(220, 38, 38, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(220, 38, 38, 0.6), 0 0 30px rgba(220, 38, 38, 0.4);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
-}
-
-.animate-twinkle {
-  animation: twinkle 3s ease-in-out infinite;
-}
-
-.animate-rock-glow {
-  animation: rock-glow 2s ease-in-out infinite;
-}
-
-/* Added rock-style text effects */
-.text-rock-shadow {
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(220, 38, 38, 0.3);
-}
-
-.text-neon-glow {
-  text-shadow: 0 0 5px rgba(220, 38, 38, 0.8), 0 0 10px rgba(220, 38, 38, 0.6), 0 0 15px rgba(220, 38, 38, 0.4);
-}
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/40; }
+  body { @apply bg-background text-foreground antialiased; }
 }
-.shadow-neumorphism {
-  box-shadow: 4px 4px 8px rgba(0,0,0,0.05), -4px -4px 8px rgba(255,255,255,0.8);
+
+.admin-shell {
+  min-height: 100vh;
+  color: var(--foreground);
+  background:
+    radial-gradient(ellipse at 82% -12%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 36rem),
+    linear-gradient(145deg, oklch(0.115 0.009 260), oklch(0.095 0.007 260));
 }
-.shadow-neumorphism-focus {
-  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05), inset -2px -2px 4px rgba(255,255,255,0.7);
+.admin-main { min-height: 100vh; margin-left: 272px; }
+.admin-content { width: min(100%, 1600px); margin: 0 auto; padding: 30px 38px 56px; }
+.admin-topbar {
+  height: 76px; display:flex; align-items:center; justify-content:space-between;
+  padding: 0 38px; border-bottom:1px solid color-mix(in oklch, var(--border) 75%, transparent);
+  background: color-mix(in oklch, var(--background) 78%, transparent);
+  backdrop-filter: blur(18px); position:sticky; top:0; z-index:20;
+}
+.admin-topbar-title { font-size:13px; color:var(--muted-foreground); letter-spacing:.02em; }
+.admin-topbar-title strong { color:var(--foreground); font-weight:650; }
+.admin-eyebrow { color:var(--primary); font-size:11px; font-weight:750; letter-spacing:.18em; text-transform:uppercase; }
+.admin-page-title { color:var(--foreground); font-size:clamp(25px,3vw,34px); line-height:1.1; font-weight:750; letter-spacing:-.045em; }
+.admin-page-description { color:var(--muted-foreground); font-size:14px; margin-top:9px; }
+.admin-panel {
+  border:1px solid color-mix(in oklch, var(--border) 82%, transparent);
+  background:linear-gradient(145deg, color-mix(in oklch, var(--card) 98%, white 2%), var(--card));
+  border-radius:18px; box-shadow:0 16px 44px rgba(0,0,0,.13);
+}
+.admin-stat {
+  position:relative; overflow:hidden; border:1px solid var(--border); border-radius:18px;
+  padding:21px; background:linear-gradient(145deg, oklch(0.16 0.01 260), oklch(0.135 0.009 260));
+}
+.admin-stat:after { content:""; position:absolute; width:130px; height:130px; border-radius:50%; right:-55px; top:-65px; background:color-mix(in oklch, var(--primary) 10%, transparent); filter:blur(2px); }
+.admin-stat-label { color:var(--muted-foreground); font-size:12px; font-weight:600; }
+.admin-stat-value { color:var(--foreground); font-size:32px; font-weight:750; letter-spacing:-.05em; line-height:1; margin-top:15px; }
+.admin-stat-foot { color:var(--muted-foreground); font-size:11px; margin-top:10px; }
+.admin-icon-box { display:grid; place-items:center; width:38px; height:38px; border:1px solid color-mix(in oklch, var(--primary) 24%, var(--border)); background:color-mix(in oklch, var(--primary) 12%, transparent); color:var(--primary); border-radius:12px; }
+.admin-quick-link {
+  display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--border);
+  border-radius:14px; background:color-mix(in oklch, var(--card) 90%, white 1%);
+  transition:transform .2s,border-color .2s,background .2s;
+}
+.admin-quick-link:hover { transform:translateY(-2px); border-color:color-mix(in oklch, var(--primary) 55%, var(--border)); background:color-mix(in oklch, var(--primary) 7%, var(--card)); }
+.admin-sidebar {
+  position:fixed; inset:0 auto 0 0; z-index:40; width:272px; display:flex; flex-direction:column;
+  padding:22px 16px 16px; border-right:1px solid var(--sidebar-border);
+  background:linear-gradient(180deg, oklch(0.125 0.009 260), oklch(0.105 0.008 260));
+}
+.admin-brand { display:flex; align-items:center; gap:12px; padding:8px 10px 25px; }
+.admin-brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:14px; color:white; font-weight:900; font-size:18px; background:linear-gradient(145deg,#f04438,#a90f19); box-shadow:0 8px 24px rgba(220,38,38,.24); }
+.admin-brand-name { color:white; font-size:15px; font-weight:800; letter-spacing:-.04em; line-height:1.1; }
+.admin-brand-sub { color:var(--muted-foreground); font-size:9px; letter-spacing:.18em; text-transform:uppercase; margin-top:5px; }
+.admin-nav-label { color:color-mix(in oklch, var(--muted-foreground) 78%, transparent); font-size:10px; font-weight:750; letter-spacing:.16em; text-transform:uppercase; padding:14px 12px 9px; }
+.admin-nav-link {
+  display:flex; align-items:center; gap:12px; min-height:45px; padding:0 12px; margin:3px 0;
+  border:1px solid transparent; border-radius:12px; color:var(--muted-foreground);
+  font-size:13px; font-weight:600; transition:all .18s ease;
+}
+.admin-nav-link:hover { color:var(--foreground); background:rgba(255,255,255,.045); }
+.admin-nav-link[data-active="true"] { color:white; border-color:rgba(239,68,68,.22); background:linear-gradient(100deg,rgba(220,38,38,.19),rgba(220,38,38,.055)); box-shadow:inset 3px 0 #ef4444; }
+.admin-nav-link[data-active="true"] svg { color:#fb6b64; }
+.admin-sidebar-footer { margin-top:auto; border-top:1px solid var(--border); padding:16px 8px 2px; }
+.admin-profile { display:flex; align-items:center; gap:10px; padding:10px; border-radius:13px; background:rgba(255,255,255,.035); }
+.admin-profile-avatar { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; color:white; background:#292d36; font-size:12px; font-weight:800; }
+.admin-mobile-toggle { display:none; }
+.admin-sidebar-backdrop { display:none; }
+.admin-table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:15px; }
+.admin-shell [data-slot="card"] { border-color:var(--border); background:var(--card); border-radius:17px; box-shadow:0 12px 30px rgba(0,0,0,.10); }
+.admin-shell input:not([type="checkbox"]):not([type="radio"]), .admin-shell textarea, .admin-shell [role="combobox"] { border-color:var(--border); background:var(--input); border-radius:10px; }
+.admin-shell input:focus, .admin-shell textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in oklch, var(--primary) 15%, transparent); }
+.admin-shell [role="dialog"] { border-color:var(--border); background:var(--card); color:var(--foreground); border-radius:18px; }
+.admin-shell table { width:100%; }
+.admin-shell th { color:var(--muted-foreground); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.admin-shell td { color:var(--foreground); font-size:13px; }
+.admin-shell ::selection { background:color-mix(in oklch, var(--primary) 35%, transparent); }
+
+@media (max-width: 900px) {
+  .admin-main { margin-left:0; }
+  .admin-content { padding:26px 22px 44px; }
+  .admin-topbar { padding:0 22px 0 76px; }
+  .admin-mobile-toggle { display:grid; place-items:center; position:fixed; left:16px; top:17px; z-index:60; width:42px; height:42px; border:1px solid var(--border); border-radius:12px; background:var(--card); color:var(--foreground); }
+  .admin-sidebar { transform:translateX(-102%); transition:transform .25s ease; box-shadow:24px 0 70px rgba(0,0,0,.35); }
+  .admin-sidebar[data-open="true"] { transform:translateX(0); }
+  .admin-sidebar-backdrop[data-open="true"] { display:block; position:fixed; inset:0; z-index:35; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); }
+}
+@media (max-width: 560px) {
+  .admin-content { padding:22px 15px 36px; }
+  .admin-topbar { height:66px; padding-right:15px; }
+  .admin-topbar-title { font-size:11px; }
+  .admin-page-description { font-size:13px; }
 }
